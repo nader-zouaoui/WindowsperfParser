@@ -30,17 +30,36 @@
 
 #include "pch.h"
 #include "CppUnitTest.h"
+#include "parser/arg-parser.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace parsertests
 {
-	TEST_CLASS(parsertests)
-	{
-	public:
-		
-		TEST_METHOD(TestMethod1)
-		{
-		}
-	};
+    TEST_CLASS(parsertests)
+    {
+    public:
+
+        TEST_METHOD(TEST_CORRECT_TEST_COMMAND)
+        {
+            const wchar_t* argv[] = { L"wperf", L"test", L"-v", L"--json" };
+            int argc = 4;
+            arg_parser parser;
+            parser.parse(argc, argv);
+
+            Assert::AreEqual(true, parser.do_verbose.get());
+            Assert::AreEqual(true, parser.do_json.get());
+            Assert::IsTrue(COMMAND_CLASS::TEST == parser.command);
+        }
+        TEST_METHOD(TEST_RANDOM_ARGS_REJECTION)
+        {
+            const wchar_t* argv[] = { L"wperf", L"test", L"-v", L"--json", L"random" };
+            int argc = 5;
+            arg_parser parser;
+            Assert::ExpectException<std::invalid_argument>([&parser, argc, &argv]() {
+                parser.parse(argc, argv);
+                }
+            );
+        }
+    };
 }

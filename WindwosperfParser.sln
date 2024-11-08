@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "parser", "parser\parser.vcxproj", "{24FF73FA-BF73-4AF5-907D-3D26CCE42842}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "parser-tests", "parser-tests\parser-tests.vcxproj", "{A5316180-99FF-4A7A-8B6B-959125FAC01A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{24FF73FA-BF73-4AF5-907D-3D26CCE42842} = {24FF73FA-BF73-4AF5-907D-3D26CCE42842}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2B8A934A-3C52-447E-9D67-22BB4EEE35A0}"
 	ProjectSection(SolutionItems) = preProject
