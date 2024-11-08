@@ -35,22 +35,55 @@
 arg_parser::arg_parser(const int argc, const wchar_t* argv[])
 {
     wstr_vec raw_args;
-    for (int i = 0; i < argc; i++)
+    for (int i = 1; i < argc; i++)
     {
         std::wcout << argc << "\n";
         std::wcout << argv[i] << "\n";
         raw_args.push_back(argv[i]);
     }
-    for (int i = 1; i < argc; i++)
+    while (raw_args.size() > 0)
     {
-        wstring arg = raw_args.at(i);
-        do_annotate.try_set(arg);
-        do_json.try_set(arg);
-        do_kernel.try_set(arg);
-        do_force_lock.try_set(arg);
-        sample_display_long.try_set(arg);
-        do_verbose.try_set(arg);
-        is_quite.try_set(arg);
-        do_annotate.try_set(arg);
+        uint16_t initial_size = raw_args.size();
+        wstring arg = raw_args.front();
+
+        if (do_verbose.try_set(raw_args)) continue;
+        if (do_json.try_set(raw_args)) continue;
+        
+        if (record_commandline_separator.try_set(raw_args)) {
+            parse_record_commandline(raw_args);
+            break;
+        }
+
+        do_annotate.try_set(raw_args);
+        do_kernel.try_set(raw_args);
+        do_force_lock.try_set(raw_args);
+        sample_display_long.try_set(raw_args);
+        is_quite.try_set(raw_args);
+        do_annotate.try_set(raw_args);
+        if (initial_size == raw_args.size())
+        {
+            std::wcout << L"Unknown argument: " << raw_args[0] << L"\n";
+
+            // TODO: handle unkown argument here
+            break;
+        }
+    }
+}
+
+void arg_parser::parse_record_commandline(wstr_vec& raw_args)
+{
+    while (raw_args.size()>0)
+    {
+        wstring arg = raw_args.front();
+
+        if (sample_pe_file.empty())
+        {
+            sample_pe_file = arg;
+            record_commandline = arg;
+        }
+        else
+            record_commandline += L" " + arg;
+
+        raw_args.erase(raw_args.begin());
     }
 }

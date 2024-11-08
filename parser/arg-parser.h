@@ -48,8 +48,7 @@ typedef std::vector<std::wstring> wstr_vec;
 /// test
 /// detect
 /// man;
-/// help 80 285€
-/// 74 012€
+/// help 
 /// version
 /// </summary>
 
@@ -60,11 +59,16 @@ struct arg_type {
     bool is_match(const wstring& arg) const {
         return key.compare(arg) == 0 || alias.compare(arg) == 0;
     }
-    void try_set(const wstring& arg) {
-        if (is_match(arg))
-        {
-            value = true;
-        }
+    bool try_set(wstr_vec& raw_args_vect) {
+        if (raw_args_vect.empty())
+            return false;
+
+        if (!is_match(raw_args_vect.front()))
+            return false;
+
+        value = true;
+        raw_args_vect.erase(raw_args_vect.begin());
+        return true;
     }
     bool get() {
         return value;
@@ -86,31 +90,38 @@ public:
     arg_type do_list = { false, L"list", L"-l" };
     flag_type do_json = { false, L"--json", L"", L"Define output type as JSON.", false };
     flag_type do_kernel = { false, L"--k", L"", L"Count kernel mode as well (disabled by default).", false };
-    flag_type do_force_lock = { 
-        false, 
-        L"--force-lock", 
-        L"", 
+    flag_type do_force_lock = {
+        false,
+        L"--force-lock",
+        L"",
         LR"(Force driver to give lock to current `wperf` process, use when you want
-            to interrupt currently executing `wperf` session or to recover from the lock.)", 
-        false 
+            to interrupt currently executing `wperf` session or to recover from the lock.)",
+        false
     };
-    // used to be sample_display_short
+    // used to be called sample_display_short
     flag_type sample_display_long = { false, L"--sample-display-long", L"", L"Display decorated symbol names.", false };
     flag_type do_verbose = { false, L"--verbose", L"-v", L"Display version.", false };
     flag_type is_quite = { false, L"-q", L"", L"Quiet mode, no output is produced.", false };
-    flag_type do_annotate = { 
-        false, 
-        L"--annotate", 
-        L"", 
-        L"Enable translating addresses taken from samples in sample/record mode into source code line numbers.", 
-        false 
+    flag_type do_annotate = {
+        false,
+        L"--annotate",
+        L"",
+        L"Enable translating addresses taken from samples in sample/record mode into source code line numbers.",
+        false
     };
-    flag_type do_disassembly = { 
-        false, 
-        L"--disassemble", 
-        L"", 
-        L"Enable disassemble output on sampling mode. Implies 'annotate'.", 
-        false 
+    flag_type do_disassembly = {
+        false,
+        L"--disassemble",
+        L"",
+        L"Enable disassemble output on sampling mode. Implies 'annotate'.",
+        false
+    };
+    flag_type record_commandline_separator = {
+        false,
+        L"--",
+        L"",
+        L"-- Process name is defined by COMMAND. User can pass verbatim arguments to the process with[ARGS].",
+        false
     };
     bool do_count;
     bool do_timeline;
@@ -145,4 +156,6 @@ public:
     bool m_sampling_with_spe = false;                   // SPE: User requested sampling with SPE
     std::map<std::wstring, uint64_t> m_sampling_flags;      // SPE: sampling flags
 
+    private:
+        void parse_record_commandline(wstr_vec& raw_args);
 };
