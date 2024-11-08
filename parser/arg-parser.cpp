@@ -32,7 +32,9 @@
 #include <iostream>
 
 
-arg_parser::arg_parser(const int argc, const wchar_t* argv[])
+arg_parser::arg_parser() {}
+
+void arg_parser::parse(const int argc, const wchar_t* argv[])
 {
     wstr_vec raw_args;
     for (int i = 1; i < argc; i++)
@@ -44,27 +46,36 @@ arg_parser::arg_parser(const int argc, const wchar_t* argv[])
     while (raw_args.size() > 0)
     {
         uint16_t initial_size = raw_args.size();
-        wstring arg = raw_args.front();
 
-        if (try_match_and_set_arg(raw_args, do_verbose)) continue;
-        if (try_match_and_set_arg(raw_args, do_json)) continue;
+
+        try_match_and_set_arg(raw_args, do_list);
+        try_match_and_set_arg(raw_args, do_help);
+        try_match_and_set_arg(raw_args, do_version);
+        try_match_and_set_arg(raw_args, do_test);
+        try_match_and_set_arg(raw_args, do_detect);
+
+        if (commands_with_no_args.find(command) != commands_with_no_args.end()) goto standard_arguments;
 
         if (try_match_and_set_arg(raw_args, record_commandline_separator)) {
             parse_record_commandline(raw_args);
             break;
         }
 
-        if (try_match_and_set_arg(raw_args, do_annotate)) continue;
-        if (try_match_and_set_arg(raw_args, do_kernel)) continue;
-        if (try_match_and_set_arg(raw_args, do_force_lock)) continue;
-        if (try_match_and_set_arg(raw_args, sample_display_long)) continue;
-        if (try_match_and_set_arg(raw_args, is_quite)) continue;
-        if (try_match_and_set_arg(raw_args, do_annotate)) continue;
+        try_match_and_set_arg(raw_args, do_annotate);
+        try_match_and_set_arg(raw_args, do_kernel);
+        try_match_and_set_arg(raw_args, sample_display_long);
+        try_match_and_set_arg(raw_args, is_quite);
+        try_match_and_set_arg(raw_args, do_annotate);
+
+    standard_arguments:
+        try_match_and_set_arg(raw_args, do_json);
+        try_match_and_set_arg(raw_args, do_verbose);
+        try_match_and_set_arg(raw_args, do_force_lock);
         if (initial_size == raw_args.size())
         {
-            std::wcout << L"Unknown argument: " << raw_args[0] << L"\n";
-
-            // TODO: handle unkown argument here
+            std::wcout << L"Invalid argument: " << raw_args.front() << L"\n";
+            // TODO: better error handling needs to be implemented here 
+            throw std::invalid_argument(std::string(raw_args.front().begin(), raw_args.front().end()));
             break;
         }
     }
@@ -113,6 +124,7 @@ bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag)
         return false;
 
     flag.value = true;
+    command = flag.command;
     raw_args_vect.erase(raw_args_vect.begin());
     return true;
 }

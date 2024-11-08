@@ -33,26 +33,39 @@
 #include <map>
 #include <vector>
 #include <deque>
+#include <array>
 #include <string>
+#include <set>
+
 using namespace std;
 
 
 typedef std::vector<std::wstring> wstr_vec;
 
-/// <summary>
-/// command list:
-/// list -l
-/// stat
-/// sample
-/// record
-/// test
-/// detect
-/// man;
-/// help 
-/// version
-/// </summary>
 #pragma region arg structs
-struct arg_type {
+enum COMMAND_CLASS {
+    STAT,
+    SAMPLE,
+    RECORD,
+    TEST,
+    DETECT,
+    HELP,
+    VERSION,
+    LIST,
+    MAN,
+    SPE,
+    TIMELINE
+};
+
+const std::set<COMMAND_CLASS> commands_with_no_args = {
+    COMMAND_CLASS::HELP,
+    COMMAND_CLASS::VERSION,
+    COMMAND_CLASS::LIST,
+    COMMAND_CLASS::DETECT,
+    COMMAND_CLASS::TEST,
+};
+
+struct arg_base_type {
     bool value;
     const wstring key;
     const wstring alias;
@@ -64,22 +77,37 @@ struct arg_type {
     }
 };
 
-struct flag_type : arg_type {
+struct flag_type : arg_base_type {
     wstring description;
     bool is_required;
 };
-#pragma endregion
 
+struct arg_type : arg_base_type {
+    const COMMAND_CLASS command;
+};
+#pragma endregion
 
 class arg_parser
 {
 public:
-    arg_parser(
+    #pragma region Methods
+    arg_parser();
+    void parse(
         _In_ const int argc,
         _In_reads_(argc) const wchar_t* argv[]
     );
+    #pragma endregion
 
-    arg_type do_list = { false, L"list", L"-l" };
+    #pragma region Commands
+    arg_type do_list = { false, L"list", L"-l", COMMAND_CLASS::LIST };
+    arg_type do_test = { false, L"test", L"", COMMAND_CLASS::TEST };
+    arg_type do_help = { false, L"help", L"--help", COMMAND_CLASS::HELP };
+    arg_type do_version = { false, L"--version", L"", COMMAND_CLASS::VERSION };
+    arg_type do_detect = { false, L"detect", L"", COMMAND_CLASS::DETECT };
+
+    #pragma endregion
+
+    #pragma region Flags
     flag_type do_json = { false, L"--json", L"", L"Define output type as JSON.", false };
     flag_type do_kernel = { false, L"--k", L"", L"Count kernel mode as well (disabled by default).", false };
     flag_type do_force_lock = {
@@ -115,16 +143,21 @@ public:
         L"-- Process name is defined by COMMAND. User can pass verbatim arguments to the process with[ARGS].",
         false
     };
+    #pragma endregion
+    
+    #pragma region Attributes
+    
+    COMMAND_CLASS command = COMMAND_CLASS::VERSION;
+
+    #pragma endregion
+
+    #pragma region Not implemented yet
     bool do_count;
     bool do_timeline;
     bool do_sample;
     bool do_record;
-    bool do_version;
-    bool do_help;
-    bool do_test;
     bool do_man;
     bool do_symbol;
-    bool do_detect = false;
     bool do_export_perf_data;
     bool do_cwd = false;            // Set current working dir for storing output files
     bool report_l3_cache_metric;
@@ -143,13 +176,17 @@ public:
     std::wstring record_commandline;        // <sample_pe_file> <arg> <arg> <arg> ...
     std::wstring timeline_output_file;
     std::wstring m_cwd;                     // Current working dir for storing output files
-    uint32_t sample_display_row;
+    uint32_t sample_display_row = 50;
     std::map<uint32_t, uint32_t> sampling_inverval;     //!< [event_index] -> event_sampling_interval
     bool m_sampling_with_spe = false;                   // SPE: User requested sampling with SPE
     std::map<std::wstring, uint64_t> m_sampling_flags;      // SPE: sampling flags
+    #pragma endregion
 
-    private:
-        void parse_record_commandline(wstr_vec& raw_args_vect);
-        bool try_match_and_set_arg(wstr_vec& raw_args_vect, flag_type& flag);
-        bool try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag);
+#pragma region Private Methods
+private:
+    void parse_record_commandline(wstr_vec& raw_args_vect);
+    bool try_match_and_set_arg(wstr_vec& raw_args_vect, flag_type& flag);
+    bool try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag);
+#pragma endregion
+
 };

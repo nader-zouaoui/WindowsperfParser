@@ -48,6 +48,7 @@ int wmain(
         std::wcout << L"test is not equal" << (test == test2) ? L"true" : L"false";
 
     }
-    arg_parser parser(argc, argv);
+    arg_parser parser;
+    parser.parse(argc, argv);
     std::wcout << L"Hello " << (parser.do_annotate.get() ? L"annotate" : L"no annotate") << L" World!\n";
 }
