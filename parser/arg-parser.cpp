@@ -46,20 +46,20 @@ arg_parser::arg_parser(const int argc, const wchar_t* argv[])
         uint16_t initial_size = raw_args.size();
         wstring arg = raw_args.front();
 
-        if (do_verbose.try_set(raw_args)) continue;
-        if (do_json.try_set(raw_args)) continue;
-        
-        if (record_commandline_separator.try_set(raw_args)) {
+        if (try_match_and_set_arg(raw_args, do_verbose)) continue;
+        if (try_match_and_set_arg(raw_args, do_json)) continue;
+
+        if (try_match_and_set_arg(raw_args, record_commandline_separator)) {
             parse_record_commandline(raw_args);
             break;
         }
 
-        do_annotate.try_set(raw_args);
-        do_kernel.try_set(raw_args);
-        do_force_lock.try_set(raw_args);
-        sample_display_long.try_set(raw_args);
-        is_quite.try_set(raw_args);
-        do_annotate.try_set(raw_args);
+        if (try_match_and_set_arg(raw_args, do_annotate)) continue;
+        if (try_match_and_set_arg(raw_args, do_kernel)) continue;
+        if (try_match_and_set_arg(raw_args, do_force_lock)) continue;
+        if (try_match_and_set_arg(raw_args, sample_display_long)) continue;
+        if (try_match_and_set_arg(raw_args, is_quite)) continue;
+        if (try_match_and_set_arg(raw_args, do_annotate)) continue;
         if (initial_size == raw_args.size())
         {
             std::wcout << L"Unknown argument: " << raw_args[0] << L"\n";
@@ -72,7 +72,7 @@ arg_parser::arg_parser(const int argc, const wchar_t* argv[])
 
 void arg_parser::parse_record_commandline(wstr_vec& raw_args)
 {
-    while (raw_args.size()>0)
+    while (raw_args.size() > 0)
     {
         wstring arg = raw_args.front();
 
@@ -86,4 +86,17 @@ void arg_parser::parse_record_commandline(wstr_vec& raw_args)
 
         raw_args.erase(raw_args.begin());
     }
+}
+
+bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, flag_type& flag)
+{
+    if (raw_args_vect.size() == 0)
+        return false;
+
+    if (!flag.is_match(raw_args_vect.front()))
+        return false;
+
+    flag.value = true;
+    raw_args_vect.erase(raw_args_vect.begin());
+    return true;
 }

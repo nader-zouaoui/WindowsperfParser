@@ -54,23 +54,12 @@ typedef std::vector<std::wstring> wstr_vec;
 
 struct arg_type {
     bool value;
-    wstring key;
-    wstring alias;
+    const wstring key;
+    const wstring alias;
     bool is_match(const wstring& arg) const {
-        return key.compare(arg) == 0 || alias.compare(arg) == 0;
+       return arg == key || arg == alias;
     }
-    bool try_set(wstr_vec& raw_args_vect) {
-        if (raw_args_vect.empty())
-            return false;
-
-        if (!is_match(raw_args_vect.front()))
-            return false;
-
-        value = true;
-        raw_args_vect.erase(raw_args_vect.begin());
-        return true;
-    }
-    bool get() {
+    bool get() const {
         return value;
     }
 };
@@ -158,4 +147,5 @@ public:
 
     private:
         void parse_record_commandline(wstr_vec& raw_args);
+        bool try_match_and_set_arg(wstr_vec& raw_args, flag_type& flag);
 };
