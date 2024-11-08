@@ -47,7 +47,6 @@ void arg_parser::parse(const int argc, const wchar_t* argv[])
     {
         uint16_t initial_size = raw_args.size();
 
-
         try_match_and_set_arg(raw_args, do_list);
         try_match_and_set_arg(raw_args, do_help);
         try_match_and_set_arg(raw_args, do_version);
@@ -61,16 +60,19 @@ void arg_parser::parse(const int argc, const wchar_t* argv[])
             break;
         }
 
+#pragma region unfinished business
         try_match_and_set_arg(raw_args, do_annotate);
         try_match_and_set_arg(raw_args, do_kernel);
         try_match_and_set_arg(raw_args, sample_display_long);
         try_match_and_set_arg(raw_args, is_quite);
         try_match_and_set_arg(raw_args, do_annotate);
+#pragma endregion
 
     standard_arguments:
         try_match_and_set_arg(raw_args, do_json);
         try_match_and_set_arg(raw_args, do_verbose);
         try_match_and_set_arg(raw_args, do_force_lock);
+
         if (initial_size == raw_args.size())
         {
             std::wcout << L"Invalid argument: " << raw_args.front() << L"\n";

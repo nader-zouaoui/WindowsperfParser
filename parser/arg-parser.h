@@ -54,7 +54,8 @@ enum COMMAND_CLASS {
     LIST,
     MAN,
     SPE,
-    TIMELINE
+    TIMELINE,
+    NO_COMMAND
 };
 
 const std::set<COMMAND_CLASS> commands_with_no_args = {
@@ -101,7 +102,7 @@ public:
     #pragma region Commands
     arg_type do_list = { false, L"list", L"-l", COMMAND_CLASS::LIST };
     arg_type do_test = { false, L"test", L"", COMMAND_CLASS::TEST };
-    arg_type do_help = { false, L"help", L"--help", COMMAND_CLASS::HELP };
+    arg_type do_help = { false, L"-h", L"--help", COMMAND_CLASS::HELP };
     arg_type do_version = { false, L"--version", L"", COMMAND_CLASS::VERSION };
     arg_type do_detect = { false, L"detect", L"", COMMAND_CLASS::DETECT };
 
@@ -120,7 +121,7 @@ public:
     };
     // used to be called sample_display_short
     flag_type sample_display_long = { false, L"--sample-display-long", L"", L"Display decorated symbol names.", false };
-    flag_type do_verbose = { false, L"--verbose", L"-v", L"Display version.", false };
+    flag_type do_verbose = { false, L"--verbose", L"-v", L"Enable verbose output also in JSON output.", false };
     flag_type is_quite = { false, L"-q", L"", L"Quiet mode, no output is produced.", false };
     flag_type do_annotate = {
         false,
@@ -147,7 +148,7 @@ public:
     
     #pragma region Attributes
     
-    COMMAND_CLASS command = COMMAND_CLASS::VERSION;
+    COMMAND_CLASS command = COMMAND_CLASS::NO_COMMAND;
 
     #pragma endregion
 

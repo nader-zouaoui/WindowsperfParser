@@ -36,18 +36,6 @@ int wmain(
     _In_reads_(argc) const wchar_t* argv[]
 )
 {
-    std::wcout << "Hello World!\n";
-    wstring test = L"test";
-    wstring test2 = L"test";
-    if (test == test2)
-    {
-        std::wcout << L"test is equal" << (test == test2) ? L"true" : L"false";
-
-    }
-    else {
-        std::wcout << L"test is not equal" << (test == test2) ? L"true" : L"false";
-
-    }
     arg_parser parser;
     parser.parse(argc, argv);
     std::wcout << L"Hello " << (parser.do_annotate.get() ? L"annotate" : L"no annotate") << L" World!\n";
