@@ -51,13 +51,13 @@ typedef std::vector<std::wstring> wstr_vec;
 /// help 
 /// version
 /// </summary>
-
+#pragma region arg structs
 struct arg_type {
     bool value;
     const wstring key;
     const wstring alias;
     bool is_match(const wstring& arg) const {
-       return arg == key || arg == alias;
+        return arg == key || arg == alias;
     }
     bool get() const {
         return value;
@@ -68,6 +68,9 @@ struct flag_type : arg_type {
     wstring description;
     bool is_required;
 };
+#pragma endregion
+
+
 class arg_parser
 {
 public:
@@ -146,6 +149,7 @@ public:
     std::map<std::wstring, uint64_t> m_sampling_flags;      // SPE: sampling flags
 
     private:
-        void parse_record_commandline(wstr_vec& raw_args);
-        bool try_match_and_set_arg(wstr_vec& raw_args, flag_type& flag);
+        void parse_record_commandline(wstr_vec& raw_args_vect);
+        bool try_match_and_set_arg(wstr_vec& raw_args_vect, flag_type& flag);
+        bool try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag);
 };

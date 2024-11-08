@@ -70,11 +70,12 @@ arg_parser::arg_parser(const int argc, const wchar_t* argv[])
     }
 }
 
-void arg_parser::parse_record_commandline(wstr_vec& raw_args)
+#pragma region command line parsing after "--"
+void arg_parser::parse_record_commandline(wstr_vec& raw_args_vect)
 {
-    while (raw_args.size() > 0)
+    while (raw_args_vect.size() > 0)
     {
-        wstring arg = raw_args.front();
+        wstring arg = raw_args_vect.front();
 
         if (sample_pe_file.empty())
         {
@@ -84,10 +85,12 @@ void arg_parser::parse_record_commandline(wstr_vec& raw_args)
         else
             record_commandline += L" " + arg;
 
-        raw_args.erase(raw_args.begin());
+        raw_args_vect.erase(raw_args_vect.begin());
     }
 }
+#pragma endregion
 
+#pragma region arg_matching and setting
 bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, flag_type& flag)
 {
     if (raw_args_vect.size() == 0)
@@ -100,3 +103,18 @@ bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, flag_type& flag)
     raw_args_vect.erase(raw_args_vect.begin());
     return true;
 }
+
+bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag)
+{
+    if (raw_args_vect.size() == 0)
+        return false;
+
+    if (!flag.is_match(raw_args_vect.front()))
+        return false;
+
+    flag.value = true;
+    raw_args_vect.erase(raw_args_vect.begin());
+    return true;
+}
+#pragma endregion
+
