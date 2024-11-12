@@ -188,6 +188,7 @@ private:
     void parse_record_commandline(wstr_vec& raw_args_vect);
     bool try_match_and_set_arg(wstr_vec& raw_args_vect, flag_type& flag);
     bool try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag);
+    void throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message = L"") const;
 #pragma endregion
 
 };

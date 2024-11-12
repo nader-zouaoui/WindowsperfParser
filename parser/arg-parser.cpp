@@ -132,3 +132,36 @@ bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag)
 }
 #pragma endregion
 
+void arg_parser::throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message) const
+{
+    std::wstring command = L"wperf";
+    for (int i = 1; arg_array[i] != nullptr; ++i) {
+        if (i > 0) {
+            command += L" ";
+        }
+        command += arg_array[i];
+    }
+
+    std::size_t pos = command.find(arg);
+    if (pos == std::wstring::npos) {
+        pos = command.length(); 
+    }
+
+    std::wstring indicator(pos, L'~'); 
+    indicator += L'^';
+
+   /* 
+   TODO: THIS function should change to use GetErrorOutputStream before migrating to wperf
+
+    */
+
+    std::wostringstream error_message;
+    error_message << L"Invalid argument detected:\n"
+        << command << L"\n"
+        << indicator << L"\n";
+    if (!additional_message.empty()) {
+        error_message << additional_message << L"\n";
+    }
+    std::wcerr << error_message.str();
+    throw std::invalid_argument("INVALID_ARGUMENT");
+}
