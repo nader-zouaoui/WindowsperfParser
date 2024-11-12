@@ -29,59 +29,164 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "arg-parser.h"
+#include "utils.h"
 #include <iostream>
-
+#include <codecvt>
+#include <locale>
+#include <cwchar>
 
 arg_parser::arg_parser() {}
 
-void arg_parser::parse(const int argc, const wchar_t* argv[])
+void arg_parser::parse(
+    _In_ const int argc,
+    _In_reads_(argc) const wchar_t* argv[]
+)
 {
+    arg_array = argv;
     wstr_vec raw_args;
     for (int i = 1; i < argc; i++)
     {
-        std::wcout << argc << "\n";
-        std::wcout << argv[i] << "\n";
         raw_args.push_back(argv[i]);
     }
     while (raw_args.size() > 0)
     {
-        uint16_t initial_size = raw_args.size();
+        size_t initial_size = raw_args.size();
+        if (command == COMMAND_CLASS::NO_COMMAND) {
+            try_match_and_set_arg(raw_args, do_list);
+            try_match_and_set_arg(raw_args, do_help);
+            try_match_and_set_arg(raw_args, do_version);
+            try_match_and_set_arg(raw_args, do_test);
+            try_match_and_set_arg(raw_args, do_detect);
+            try_match_and_set_arg(raw_args, do_sample);
+            try_match_and_set_arg(raw_args, do_record);
+        }
 
-        try_match_and_set_arg(raw_args, do_list);
-        try_match_and_set_arg(raw_args, do_help);
-        try_match_and_set_arg(raw_args, do_version);
-        try_match_and_set_arg(raw_args, do_test);
-        try_match_and_set_arg(raw_args, do_detect);
-
+        if (command == COMMAND_CLASS::SAMPLE || command == COMMAND_CLASS::RECORD)
+            parse_sampling_args(raw_args);
+          
         if (commands_with_no_args.find(command) != commands_with_no_args.end()) goto standard_arguments;
 
         if (try_match_and_set_arg(raw_args, record_commandline_separator)) {
+            if (command != COMMAND_CLASS::RECORD && command != COMMAND_CLASS::STAT && command != COMMAND_CLASS::TIMELINE && command != COMMAND_CLASS::SPE)
+                throw_invalid_arg(raw_args.front(), L"warning: only `stat` and `record` support process spawn!");
+
             parse_record_commandline(raw_args);
             break;
         }
 
-#pragma region unfinished business
-        try_match_and_set_arg(raw_args, do_annotate);
-        try_match_and_set_arg(raw_args, do_kernel);
-        try_match_and_set_arg(raw_args, sample_display_long);
-        try_match_and_set_arg(raw_args, is_quite);
-        try_match_and_set_arg(raw_args, do_annotate);
-#pragma endregion
-
-    standard_arguments:
+        standard_arguments:
         try_match_and_set_arg(raw_args, do_json);
         try_match_and_set_arg(raw_args, do_verbose);
         try_match_and_set_arg(raw_args, do_force_lock);
 
         if (initial_size == raw_args.size())
         {
-            std::wcout << L"Invalid argument: " << raw_args.front() << L"\n";
-            // TODO: better error handling needs to be implemented here 
-            throw std::invalid_argument(std::string(raw_args.front().begin(), raw_args.front().end()));
-            break;
+            throw_invalid_arg(raw_args.front());
         }
     }
+    
+    switch (command)
+    {
+    case STAT:
+        break;
+    case SAMPLE:
+        check_sampling_required_args();
+        break;
+    case RECORD:
+        check_record_required_args();
+        break;
+    case TEST:
+        break;
+    case DETECT:
+        break;
+    case HELP:
+        break;
+    case VERSION:
+        break;
+    case LIST:
+        break;
+    case MAN:
+        break;
+    case SPE:
+        break;
+    case TIMELINE:
+        break;
+    case NO_COMMAND:
+        break;
+    default:
+        break;
+    }
 }
+
+#pragma region Sampling section parsing
+
+void arg_parser::parse_sampling_args(wstr_vec& raw_args_vect)
+{
+    while (raw_args_vect.size() > 0)
+    {
+        try
+        {
+            size_t initial_size = raw_args_vect.size();
+            try_match_and_set_arg(raw_args_vect, do_annotate);
+            try_match_and_set_arg(raw_args_vect, do_kernel);
+            try_match_and_set_arg(raw_args_vect, sample_display_long);
+            try_match_and_set_arg(raw_args_vect, is_quite);
+            if (cores_idx == raw_args_vect.front()) {
+                raw_args_vect.erase(raw_args_vect.begin());
+                parse_cpu_core(raw_args_vect, 1);
+            }
+            if (count_duration == raw_args_vect.front()) {
+                raw_args_vect.erase(raw_args_vect.begin());
+                parse_timeout(raw_args_vect);
+            }
+
+            if (initial_size == raw_args_vect.size()) break;
+        }
+        catch (...)
+        {
+            throw_invalid_arg(raw_args_vect.front());
+        }
+       
+    }
+}
+void arg_parser::parse_cpu_core(wstr_vec& raw_args_vect, uint8_t MAX_CPU_CORES)
+{
+    if (raw_args_vect.size() == 0)
+    {
+        throw_invalid_arg(raw_args_vect.front());
+    }
+    wstring cores = raw_args_vect.front();
+    if (TokenizeWideStringOfInts(cores.c_str(), L',', cores_idx.value) == false)
+    {
+        throw_invalid_arg(raw_args_vect.front());
+    }
+    if (cores_idx.value.size() > MAX_CPU_CORES)
+    {
+        throw_invalid_arg(raw_args_vect.front());
+    }
+    raw_args_vect.erase(raw_args_vect.begin());
+}
+
+void arg_parser::parse_timeout(wstr_vec& raw_args_vect)
+{
+    if (raw_args_vect.size() == 0)
+    {
+        throw std::invalid_argument("ERROR_TIMEOUT");
+    }
+    wstring timeoutargs = raw_args_vect.front();
+    count_duration.value = convert_timeout_arg_to_seconds(timeoutargs);
+    raw_args_vect.erase(raw_args_vect.begin());
+}
+
+void arg_parser::check_sampling_required_args() {
+    // TODO: implement this function
+}
+
+void arg_parser::check_record_required_args() {
+    // TODO: implement this function
+}
+#pragma endregion
+
 
 #pragma region command line parsing after "--"
 void arg_parser::parse_record_commandline(wstr_vec& raw_args_vect)
@@ -101,15 +206,18 @@ void arg_parser::parse_record_commandline(wstr_vec& raw_args_vect)
         raw_args_vect.erase(raw_args_vect.begin());
     }
 }
+
+
+
 #pragma endregion
 
 #pragma region arg_matching and setting
-bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, flag_type& flag)
+bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, flag_type<bool>& flag)
 {
     if (raw_args_vect.size() == 0)
         return false;
 
-    if (!flag.is_match(raw_args_vect.front()))
+    if (!(flag == raw_args_vect.front()))
         return false;
 
     flag.value = true;
@@ -122,7 +230,7 @@ bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag)
     if (raw_args_vect.size() == 0)
         return false;
 
-    if (!flag.is_match(raw_args_vect.front()))
+    if (!(flag == raw_args_vect.front()))
         return false;
 
     flag.value = true;
@@ -131,6 +239,77 @@ bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag)
     return true;
 }
 #pragma endregion
+
+#pragma region Utils
+bool arg_parser::check_timeout_arg(std::wstring number_and_suffix, const std::unordered_map<std::wstring, double>& unit_map)
+{
+    std::wstring accept_units;
+
+    for (const auto& pair : unit_map)
+    {
+        if (!accept_units.empty()) {
+            accept_units += L"|";
+        }
+        accept_units += pair.first;
+    }
+
+    std::wstring regex_string = L"^(0|([1-9][0-9]*))(\\.[0-9]{1,2})?(" + accept_units + L")?$";
+    std::wregex r(regex_string);
+
+    std::wsmatch match;
+    if (std::regex_search(number_and_suffix, match, r)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+double arg_parser::convert_timeout_arg_to_seconds(std::wstring number_and_suffix)
+{
+    std::unordered_map<std::wstring, double> unit_map = { {L"s", 1}, { L"m", 60 }, {L"ms", 0.001}, {L"h", 3600}, {L"d" , 86400} };
+
+    if (!check_timeout_arg(number_and_suffix, unit_map)) {
+        throw_invalid_arg(number_and_suffix);
+    }
+    //logic to split number and suffix
+    int i = 0;
+    for (; i < number_and_suffix.size(); i++)
+    {
+        if (!std::isdigit(number_and_suffix[i]) && (number_and_suffix[i] != L'.')) {
+            break;
+        }
+    }
+
+    std::wstring number_wstring = number_and_suffix.substr(0, i);
+
+    double number;
+    try {
+        number = std::stod(number_wstring);
+    }
+    catch (...) {
+        throw_invalid_arg(number_and_suffix);
+
+    }
+
+    std::wstring suffix = number_and_suffix.substr(i);
+
+    //default to seconds if unit is not provided
+    if (suffix.empty()) {
+        return number;
+    }
+
+    //check if the unit exists in the map
+    auto it = unit_map.find(suffix);
+    if (it == unit_map.end())
+    {
+        throw_invalid_arg(number_and_suffix);
+
+    }
+    //Note: This exception should never be reached, as it should be caught in the regex construction of check_timeout_arg
+    //However, if the unit map/regex construction is changeed in the future, this serves as a good safety net
+    return ConvertNumberWithUnit(number, suffix, unit_map);
+}
 
 void arg_parser::throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message) const
 {
@@ -165,3 +344,5 @@ void arg_parser::throw_invalid_arg(const std::wstring& arg, const std::wstring& 
     std::wcerr << error_message.str();
     throw std::invalid_argument("INVALID_ARGUMENT");
 }
+
+#pragma endregion
