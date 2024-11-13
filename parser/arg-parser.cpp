@@ -135,34 +135,34 @@ void arg_parser::parse_sampling_args(wstr_vec& raw_args_vect)
         try_match_and_set_arg(raw_args_vect, do_disassembly);
         if (cores_idx == raw_args_vect.front()) {
             raw_args_vect.erase(raw_args_vect.begin());
-            check_flag_value(raw_args_vect);
+            check_flag_value_existance(raw_args_vect);
 
             parse_cpu_core(raw_args_vect, 1);
         }
         if (count_duration == raw_args_vect.front()) {
             raw_args_vect.erase(raw_args_vect.begin());
-            check_flag_value(raw_args_vect);
+            check_flag_value_existance(raw_args_vect);
 
             count_duration.value = convert_timeout_arg_to_seconds(raw_args_vect.front());
             raw_args_vect.erase(raw_args_vect.begin());
         }
         if (symbol_arg == raw_args_vect.front()) {
             raw_args_vect.erase(raw_args_vect.begin());
-            check_flag_value(raw_args_vect);
+            check_flag_value_existance(raw_args_vect);
 
             symbol_arg.value = raw_args_vect.front();
             raw_args_vect.erase(raw_args_vect.begin());
         }
         if (record_spawn_delay == raw_args_vect.front()) {
             raw_args_vect.erase(raw_args_vect.begin());
-            check_flag_value(raw_args_vect);
+            check_flag_value_existance(raw_args_vect);
 
             record_spawn_delay.value = convert_timeout_arg_to_seconds(raw_args_vect.front());
             raw_args_vect.erase(raw_args_vect.begin());
         }
         if (sample_display_row == raw_args_vect.front()) {
             raw_args_vect.erase(raw_args_vect.begin());
-            check_flag_value(raw_args_vect);
+            check_flag_value_existance(raw_args_vect);
             try
             {
                 sample_display_row.value = _wtoi(raw_args_vect.front().c_str());
@@ -325,7 +325,7 @@ double arg_parser::convert_timeout_arg_to_seconds(std::wstring number_and_suffix
 #pragma endregion
 
 #pragma region error handling
-void arg_parser::check_flag_value(const wstr_vec& raw_args_vect) const
+void arg_parser::check_flag_value_existance(const wstr_vec& raw_args_vect) const
 {
     check_next_arg(raw_args_vect);
     if (raw_args_vect.front().find(L"-") == 0)

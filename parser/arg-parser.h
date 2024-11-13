@@ -244,7 +244,7 @@ private:
     bool check_timeout_arg(std::wstring number_and_suffix, const std::unordered_map<std::wstring, double>& unit_map);
     double convert_timeout_arg_to_seconds(std::wstring number_and_suffix);
     void check_next_arg(const wstr_vec& raw_args_vect) const;
-    void check_flag_value(const wstr_vec& raw_args_vect) const;
+    void check_flag_value_existance(const wstr_vec& raw_args_vect) const;
     void throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message = L"") const;
 #pragma endregion
 
