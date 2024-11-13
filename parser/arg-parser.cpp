@@ -124,8 +124,6 @@ void arg_parser::parse_sampling_args(wstr_vec& raw_args_vect)
 {
     while (raw_args_vect.size() > 0)
     {
-        try
-        {
             size_t initial_size = raw_args_vect.size();
             try_match_and_set_arg(raw_args_vect, do_annotate);
             try_match_and_set_arg(raw_args_vect, do_kernel);
@@ -141,12 +139,6 @@ void arg_parser::parse_sampling_args(wstr_vec& raw_args_vect)
             }
 
             if (initial_size == raw_args_vect.size()) break;
-        }
-        catch (...)
-        {
-            throw_invalid_arg(raw_args_vect.front());
-        }
-       
     }
 }
 void arg_parser::parse_cpu_core(wstr_vec& raw_args_vect, uint8_t MAX_CPU_CORES)
@@ -162,7 +154,9 @@ void arg_parser::parse_cpu_core(wstr_vec& raw_args_vect, uint8_t MAX_CPU_CORES)
     }
     if (cores_idx.value.size() > MAX_CPU_CORES)
     {
-        throw_invalid_arg(raw_args_vect.front());
+        std::wostringstream error_message;
+        error_message << L"Maximum number of cores allowed is " << MAX_CPU_CORES;
+        throw_invalid_arg(raw_args_vect.front(), error_message.str());
     }
     raw_args_vect.erase(raw_args_vect.begin());
 }
@@ -289,7 +283,6 @@ double arg_parser::convert_timeout_arg_to_seconds(std::wstring number_and_suffix
     }
     catch (...) {
         throw_invalid_arg(number_and_suffix);
-
     }
 
     std::wstring suffix = number_and_suffix.substr(i);
