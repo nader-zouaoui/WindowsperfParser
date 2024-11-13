@@ -303,7 +303,9 @@ double arg_parser::convert_timeout_arg_to_seconds(std::wstring number_and_suffix
     //However, if the unit map/regex construction is changeed in the future, this serves as a good safety net
     return ConvertNumberWithUnit(number, suffix, unit_map);
 }
+#pragma endregion
 
+#pragma region error handling
 void arg_parser::throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message) const
 {
     std::wstring command = L"wperf";
@@ -316,16 +318,16 @@ void arg_parser::throw_invalid_arg(const std::wstring& arg, const std::wstring& 
 
     std::size_t pos = command.find(arg);
     if (pos == std::wstring::npos) {
-        pos = command.length(); 
+        pos = command.length();
     }
 
-    std::wstring indicator(pos, L'~'); 
+    std::wstring indicator(pos, L'~');
     indicator += L'^';
 
-   /* 
-   TODO: THIS function should change to use GetErrorOutputStream before migrating to wperf
+    /*
+    TODO: THIS function should change to use GetErrorOutputStream before migrating to wperf
 
-    */
+     */
 
     std::wostringstream error_message;
     error_message << L"Invalid argument detected:\n"
