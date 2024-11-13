@@ -84,7 +84,7 @@ void arg_parser::parse(
             throw_invalid_arg(raw_args.front());
         }
     }
-    
+#pragma region Check for required flags per command
     switch (command)
     {
     case STAT:
@@ -116,6 +116,9 @@ void arg_parser::parse(
     default:
         break;
     }
+
+#pragma endregion
+
 }
 
 #pragma region Sampling section parsing
