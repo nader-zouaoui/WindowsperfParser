@@ -76,7 +76,7 @@ struct arg_base_type {
         return is_match(arg);
     }
     bool is_match(const wstring& arg) const {
-        return arg == key || arg == alias;
+        return !arg.empty() && (arg == key || arg == alias);
     }
     T get() const {
         return value;
@@ -166,6 +166,24 @@ public:
             minutes, hours, days). If no unit is provided, the default unit
             is seconds. Accuracy is 0.1 sec.)"
     };
+    flag_type<std::wstring> symbol_arg = {
+        L"",
+        L"--symbol",
+        L"-s",
+        L"Filter results for specific symbols (for use with 'record' and 'sample' commands)."
+    };
+    flag_type<uint32_t> record_spawn_delay = {
+       1000,
+       L"--record_spawn_delay",
+       L"",
+       L"Set the waiting time, in milliseconds, before reading process data after spawning it with `record`."
+    };
+    flag_type<uint32_t> sample_display_row = {
+       50,
+       L"--sample-display-row",
+       L"",
+       L"Set how many samples you want to see in the summary (50 by default)."
+    };
 #pragma endregion
 
 #pragma region Attributes
@@ -179,7 +197,6 @@ public:
     bool do_count;
     bool do_timeline;
     bool do_man;
-    bool do_symbol;
     bool do_export_perf_data;
     bool do_cwd = false;            // Set current working dir for storing output files
     bool report_l3_cache_metric;
@@ -187,16 +204,13 @@ public:
     uint8_t dmc_idx;
     double count_interval;
     int count_timeline;
-    uint32_t record_spawn_delay = 1000;
     std::wstring man_query_args;
-    std::wstring symbol_arg;
     std::wstring sample_image_name;
     std::wstring sample_pe_file;
     std::wstring sample_pdb_file;
     std::wstring record_commandline;        // <sample_pe_file> <arg> <arg> <arg> ...
     std::wstring timeline_output_file;
     std::wstring m_cwd;                     // Current working dir for storing output files
-    uint32_t sample_display_row = 50;
     std::map<uint32_t, uint32_t> sampling_inverval;     //!< [event_index] -> event_sampling_interval
     bool m_sampling_with_spe = false;                   // SPE: User requested sampling with SPE
     std::map<std::wstring, uint64_t> m_sampling_flags;      // SPE: sampling flags
@@ -205,7 +219,6 @@ public:
 #pragma region Private Methods
 private:
     void parse_record_commandline(wstr_vec& raw_args_vect);
-    void parse_timeout(wstr_vec& raw_args_vect);
     void check_sampling_required_args();
     void check_record_required_args();
     void parse_sampling_args(wstr_vec& raw_args_vect);
@@ -214,6 +227,8 @@ private:
     bool try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag);
     bool check_timeout_arg(std::wstring number_and_suffix, const std::unordered_map<std::wstring, double>& unit_map);
     double convert_timeout_arg_to_seconds(std::wstring number_and_suffix);
+    void check_next_arg(const wstr_vec& raw_args_vect) const;
+    void check_flag_value(const wstr_vec& raw_args_vect) const;
     void throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message = L"") const;
 #pragma endregion
 

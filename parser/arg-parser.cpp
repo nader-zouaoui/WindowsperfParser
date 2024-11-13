@@ -132,24 +132,52 @@ void arg_parser::parse_sampling_args(wstr_vec& raw_args_vect)
             try_match_and_set_arg(raw_args_vect, do_kernel);
             try_match_and_set_arg(raw_args_vect, sample_display_long);
             try_match_and_set_arg(raw_args_vect, is_quite);
+            try_match_and_set_arg(raw_args_vect, do_disassembly);
             if (cores_idx == raw_args_vect.front()) {
                 raw_args_vect.erase(raw_args_vect.begin());
+                check_flag_value(raw_args_vect);
+                
                 parse_cpu_core(raw_args_vect, 1);
             }
             if (count_duration == raw_args_vect.front()) {
                 raw_args_vect.erase(raw_args_vect.begin());
-                parse_timeout(raw_args_vect);
-            }
+                check_flag_value(raw_args_vect);
 
+                count_duration.value = convert_timeout_arg_to_seconds(raw_args_vect.front());
+                raw_args_vect.erase(raw_args_vect.begin());
+            }
+            if (symbol_arg == raw_args_vect.front()) {
+                raw_args_vect.erase(raw_args_vect.begin());
+                check_flag_value(raw_args_vect);
+
+                symbol_arg.value = raw_args_vect.front();
+                raw_args_vect.erase(raw_args_vect.begin());
+            }
+            if (record_spawn_delay == raw_args_vect.front()) {
+                raw_args_vect.erase(raw_args_vect.begin());
+                check_flag_value(raw_args_vect);
+
+                record_spawn_delay.value = convert_timeout_arg_to_seconds(raw_args_vect.front());
+                raw_args_vect.erase(raw_args_vect.begin());
+            }
+            if (sample_display_row == raw_args_vect.front()) {
+                raw_args_vect.erase(raw_args_vect.begin());
+                check_flag_value(raw_args_vect);
+                try
+                {
+                    sample_display_row.value = _wtoi(raw_args_vect.front().c_str());
+                    raw_args_vect.erase(raw_args_vect.begin());
+                }
+                catch (const std::exception&)
+                {
+                    throw_invalid_arg(raw_args_vect.front());
+                }
+            }
             if (initial_size == raw_args_vect.size()) break;
     }
 }
 void arg_parser::parse_cpu_core(wstr_vec& raw_args_vect, uint8_t MAX_CPU_CORES)
 {
-    if (raw_args_vect.size() == 0)
-    {
-        throw_invalid_arg(raw_args_vect.front());
-    }
     wstring cores = raw_args_vect.front();
     if (TokenizeWideStringOfInts(cores.c_str(), L',', cores_idx.value) == false)
     {
@@ -164,16 +192,6 @@ void arg_parser::parse_cpu_core(wstr_vec& raw_args_vect, uint8_t MAX_CPU_CORES)
     raw_args_vect.erase(raw_args_vect.begin());
 }
 
-void arg_parser::parse_timeout(wstr_vec& raw_args_vect)
-{
-    if (raw_args_vect.size() == 0)
-    {
-        throw std::invalid_argument("ERROR_TIMEOUT");
-    }
-    wstring timeoutargs = raw_args_vect.front();
-    count_duration.value = convert_timeout_arg_to_seconds(timeoutargs);
-    raw_args_vect.erase(raw_args_vect.begin());
-}
 
 void arg_parser::check_sampling_required_args() {
     // TODO: implement this function
@@ -203,9 +221,6 @@ void arg_parser::parse_record_commandline(wstr_vec& raw_args_vect)
         raw_args_vect.erase(raw_args_vect.begin());
     }
 }
-
-
-
 #pragma endregion
 
 #pragma region arg_matching and setting
@@ -306,9 +321,27 @@ double arg_parser::convert_timeout_arg_to_seconds(std::wstring number_and_suffix
     //However, if the unit map/regex construction is changeed in the future, this serves as a good safety net
     return ConvertNumberWithUnit(number, suffix, unit_map);
 }
+
 #pragma endregion
 
 #pragma region error handling
+void arg_parser::check_flag_value(const wstr_vec& raw_args_vect) const
+{
+    check_next_arg(raw_args_vect);
+    if (raw_args_vect.front().find(L"-") == 0)
+    {
+        throw_invalid_arg(raw_args_vect.front(), L"Hint: Missing value for argument!");
+    }
+}
+
+void arg_parser::check_next_arg(const wstr_vec& raw_args_vect) const
+{
+    if (raw_args_vect.size() == 0)
+    {
+        throw_invalid_arg(L"");
+    }
+}
+
 void arg_parser::throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message) const
 {
     std::wstring command = L"wperf";
@@ -320,7 +353,7 @@ void arg_parser::throw_invalid_arg(const std::wstring& arg, const std::wstring& 
     }
 
     std::size_t pos = command.find(arg);
-    if (pos == std::wstring::npos) {
+    if (pos == 0 || pos == std::wstring::npos) {
         pos = command.length();
     }
 
