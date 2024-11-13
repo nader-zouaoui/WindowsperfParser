@@ -184,6 +184,24 @@ public:
        L"",
        L"Set how many samples you want to see in the summary (50 by default)."
     };
+    flag_type<std::wstring> sample_pe_file = {
+      L"",
+      L"--pe_file",
+      L"",
+      L"Specify the PE filename (and path)."
+    };
+    flag_type<std::wstring> sample_image_name = {
+      L"",
+      L"--image_name",
+      L"",
+      L"Specify the image name you want to sample."
+    };
+    flag_type<std::wstring> sample_pdb_file = {
+     L"",
+     L"--pdb_file",
+     L"",
+     L"Specify the PDB filename (and path), PDB file should directly corresponds to a PE file set with `- - pe_file`."
+    };
 #pragma endregion
 
 #pragma region Attributes
@@ -205,9 +223,7 @@ public:
     double count_interval;
     int count_timeline;
     std::wstring man_query_args;
-    std::wstring sample_image_name;
-    std::wstring sample_pe_file;
-    std::wstring sample_pdb_file;
+
     std::wstring record_commandline;        // <sample_pe_file> <arg> <arg> <arg> ...
     std::wstring timeline_output_file;
     std::wstring m_cwd;                     // Current working dir for storing output files

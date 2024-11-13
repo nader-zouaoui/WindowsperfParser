@@ -63,7 +63,7 @@ void arg_parser::parse(
 
         if (command == COMMAND_CLASS::SAMPLE || command == COMMAND_CLASS::RECORD)
             parse_sampling_args(raw_args);
-          
+
         if (commands_with_no_args.find(command) != commands_with_no_args.end()) goto standard_arguments;
 
         if (try_match_and_set_arg(raw_args, record_commandline_separator)) {
@@ -74,7 +74,7 @@ void arg_parser::parse(
             break;
         }
 
-        standard_arguments:
+    standard_arguments:
         try_match_and_set_arg(raw_args, do_json);
         try_match_and_set_arg(raw_args, do_verbose);
         try_match_and_set_arg(raw_args, do_force_lock);
@@ -127,53 +127,53 @@ void arg_parser::parse_sampling_args(wstr_vec& raw_args_vect)
 {
     while (raw_args_vect.size() > 0)
     {
-            size_t initial_size = raw_args_vect.size();
-            try_match_and_set_arg(raw_args_vect, do_annotate);
-            try_match_and_set_arg(raw_args_vect, do_kernel);
-            try_match_and_set_arg(raw_args_vect, sample_display_long);
-            try_match_and_set_arg(raw_args_vect, is_quite);
-            try_match_and_set_arg(raw_args_vect, do_disassembly);
-            if (cores_idx == raw_args_vect.front()) {
-                raw_args_vect.erase(raw_args_vect.begin());
-                check_flag_value(raw_args_vect);
-                
-                parse_cpu_core(raw_args_vect, 1);
-            }
-            if (count_duration == raw_args_vect.front()) {
-                raw_args_vect.erase(raw_args_vect.begin());
-                check_flag_value(raw_args_vect);
+        size_t initial_size = raw_args_vect.size();
+        try_match_and_set_arg(raw_args_vect, do_annotate);
+        try_match_and_set_arg(raw_args_vect, do_kernel);
+        try_match_and_set_arg(raw_args_vect, sample_display_long);
+        try_match_and_set_arg(raw_args_vect, is_quite);
+        try_match_and_set_arg(raw_args_vect, do_disassembly);
+        if (cores_idx == raw_args_vect.front()) {
+            raw_args_vect.erase(raw_args_vect.begin());
+            check_flag_value(raw_args_vect);
 
-                count_duration.value = convert_timeout_arg_to_seconds(raw_args_vect.front());
-                raw_args_vect.erase(raw_args_vect.begin());
-            }
-            if (symbol_arg == raw_args_vect.front()) {
-                raw_args_vect.erase(raw_args_vect.begin());
-                check_flag_value(raw_args_vect);
+            parse_cpu_core(raw_args_vect, 1);
+        }
+        if (count_duration == raw_args_vect.front()) {
+            raw_args_vect.erase(raw_args_vect.begin());
+            check_flag_value(raw_args_vect);
 
-                symbol_arg.value = raw_args_vect.front();
-                raw_args_vect.erase(raw_args_vect.begin());
-            }
-            if (record_spawn_delay == raw_args_vect.front()) {
-                raw_args_vect.erase(raw_args_vect.begin());
-                check_flag_value(raw_args_vect);
+            count_duration.value = convert_timeout_arg_to_seconds(raw_args_vect.front());
+            raw_args_vect.erase(raw_args_vect.begin());
+        }
+        if (symbol_arg == raw_args_vect.front()) {
+            raw_args_vect.erase(raw_args_vect.begin());
+            check_flag_value(raw_args_vect);
 
-                record_spawn_delay.value = convert_timeout_arg_to_seconds(raw_args_vect.front());
+            symbol_arg.value = raw_args_vect.front();
+            raw_args_vect.erase(raw_args_vect.begin());
+        }
+        if (record_spawn_delay == raw_args_vect.front()) {
+            raw_args_vect.erase(raw_args_vect.begin());
+            check_flag_value(raw_args_vect);
+
+            record_spawn_delay.value = convert_timeout_arg_to_seconds(raw_args_vect.front());
+            raw_args_vect.erase(raw_args_vect.begin());
+        }
+        if (sample_display_row == raw_args_vect.front()) {
+            raw_args_vect.erase(raw_args_vect.begin());
+            check_flag_value(raw_args_vect);
+            try
+            {
+                sample_display_row.value = _wtoi(raw_args_vect.front().c_str());
                 raw_args_vect.erase(raw_args_vect.begin());
             }
-            if (sample_display_row == raw_args_vect.front()) {
-                raw_args_vect.erase(raw_args_vect.begin());
-                check_flag_value(raw_args_vect);
-                try
-                {
-                    sample_display_row.value = _wtoi(raw_args_vect.front().c_str());
-                    raw_args_vect.erase(raw_args_vect.begin());
-                }
-                catch (const std::exception&)
-                {
-                    throw_invalid_arg(raw_args_vect.front());
-                }
+            catch (const std::exception&)
+            {
+                throw_invalid_arg(raw_args_vect.front());
             }
-            if (initial_size == raw_args_vect.size()) break;
+        }
+        if (initial_size == raw_args_vect.size()) break;
     }
 }
 void arg_parser::parse_cpu_core(wstr_vec& raw_args_vect, uint8_t MAX_CPU_CORES)
@@ -210,9 +210,9 @@ void arg_parser::parse_record_commandline(wstr_vec& raw_args_vect)
     {
         wstring arg = raw_args_vect.front();
 
-        if (sample_pe_file.empty())
+        if (sample_pe_file.value.empty())
         {
-            sample_pe_file = arg;
+            sample_pe_file.value = arg;
             record_commandline = arg;
         }
         else
