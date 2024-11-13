@@ -173,9 +173,31 @@ void arg_parser::parse_sampling_args(wstr_vec& raw_args_vect)
                 throw_invalid_arg(raw_args_vect.front());
             }
         }
+        if (sample_pe_file == raw_args_vect.front()) {
+            raw_args_vect.erase(raw_args_vect.begin());
+            check_flag_value_existance(raw_args_vect);
+            check_file_path(raw_args_vect.front());
+        }
+        if (sample_pdb_file == raw_args_vect.front()) {
+            raw_args_vect.erase(raw_args_vect.begin());
+            check_flag_value_existance(raw_args_vect);
+            check_file_path(raw_args_vect.front());
+
+            sample_pdb_file.value = raw_args_vect.front();
+            raw_args_vect.erase(raw_args_vect.begin());
+        }
+        if (sample_image_name == raw_args_vect.front()) {
+            raw_args_vect.erase(raw_args_vect.begin());
+            check_flag_value_existance(raw_args_vect);
+
+            sample_image_name.value = raw_args_vect.front();
+            raw_args_vect.erase(raw_args_vect.begin());
+        }
+
         if (initial_size == raw_args_vect.size()) break;
     }
 }
+
 void arg_parser::parse_cpu_core(wstr_vec& raw_args_vect, uint8_t MAX_CPU_CORES)
 {
     wstring cores = raw_args_vect.front();
@@ -322,6 +344,15 @@ double arg_parser::convert_timeout_arg_to_seconds(std::wstring number_and_suffix
     return ConvertNumberWithUnit(number, suffix, unit_map);
 }
 
+void arg_parser::check_file_path(wstring file_path)
+{
+    if (std::filesystem::exists(file_path) == false)
+    {
+        std::wostringstream error_message;
+        error_message << L"File path '" << file_path << L"' doesn't exist";
+        throw_invalid_arg(file_path, error_message.str());
+    }
+}
 #pragma endregion
 
 #pragma region error handling

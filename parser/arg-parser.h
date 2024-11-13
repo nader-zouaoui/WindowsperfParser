@@ -238,6 +238,7 @@ private:
     void check_sampling_required_args();
     void check_record_required_args();
     void parse_sampling_args(wstr_vec& raw_args_vect);
+    void check_file_path(wstring file_path);
     void parse_cpu_core(wstr_vec& raw_args_vect, uint8_t MAX_CPU_CORES);
     bool try_match_and_set_arg(wstr_vec& raw_args_vect, flag_type<bool>& flag);
     bool try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag);
