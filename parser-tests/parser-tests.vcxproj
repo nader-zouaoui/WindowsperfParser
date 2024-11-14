@@ -172,6 +172,11 @@
     <ClInclude Include="mock-arg-parser.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\parser\parser.vcxproj">
+      <Project>{24ff73fa-bf73-4af5-907d-3d26cce42842}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
