@@ -34,6 +34,7 @@
 #include <codecvt>
 #include <locale>
 #include <cwchar>
+#include <vector>
 
 arg_parser::arg_parser() {}
 
@@ -42,12 +43,14 @@ void arg_parser::parse(
     _In_reads_(argc) const wchar_t* argv[]
 )
 {
-    arg_array = argv;
     wstr_vec raw_args;
     for (int i = 1; i < argc; i++)
     {
         raw_args.push_back(argv[i]);
+        arg_array.push_back(argv[i]);
+
     }
+
     while (raw_args.size() > 0)
     {
         size_t initial_size = raw_args.size();
@@ -59,6 +62,7 @@ void arg_parser::parse(
             try_match_and_set_arg(raw_args, do_detect);
             try_match_and_set_arg(raw_args, do_sample);
             try_match_and_set_arg(raw_args, do_record);
+            try_match_and_set_arg(raw_args, do_count);
         }
 
         if (command == COMMAND_CLASS::SAMPLE || command == COMMAND_CLASS::RECORD)
@@ -66,7 +70,7 @@ void arg_parser::parse(
 
         if (commands_with_no_args.find(command) != commands_with_no_args.end()) goto standard_arguments;
 
-        if (try_match_and_set_arg(raw_args, record_commandline_separator)) {
+        if (try_match_and_set_bool_flag(raw_args, record_commandline_separator)) {
             if (command != COMMAND_CLASS::RECORD && command != COMMAND_CLASS::STAT && command != COMMAND_CLASS::TIMELINE && command != COMMAND_CLASS::SPE)
                 throw_invalid_arg(raw_args.front(), L"warning: only `stat` and `record` support process spawn!");
 
@@ -75,9 +79,9 @@ void arg_parser::parse(
         }
 
     standard_arguments:
-        try_match_and_set_arg(raw_args, do_json);
-        try_match_and_set_arg(raw_args, do_verbose);
-        try_match_and_set_arg(raw_args, do_force_lock);
+        try_match_and_set_bool_flag(raw_args, do_json);
+        try_match_and_set_bool_flag(raw_args, do_verbose);
+        try_match_and_set_bool_flag(raw_args, do_force_lock);
 
         if (initial_size == raw_args.size())
         {
@@ -128,40 +132,40 @@ void arg_parser::parse_sampling_args(wstr_vec& raw_args_vect)
     while (raw_args_vect.size() > 0)
     {
         size_t initial_size = raw_args_vect.size();
-        try_match_and_set_arg(raw_args_vect, do_annotate);
-        try_match_and_set_arg(raw_args_vect, do_kernel);
-        try_match_and_set_arg(raw_args_vect, sample_display_long);
-        try_match_and_set_arg(raw_args_vect, is_quite);
-        try_match_and_set_arg(raw_args_vect, do_disassembly);
-        if (cores_idx == raw_args_vect.front()) {
-            raw_args_vect.erase(raw_args_vect.begin());
+        try_match_and_set_bool_flag(raw_args_vect, do_annotate);
+        try_match_and_set_bool_flag(raw_args_vect, do_kernel);
+        try_match_and_set_bool_flag(raw_args_vect, sample_display_long);
+        try_match_and_set_bool_flag(raw_args_vect, is_quite);
+        try_match_and_set_bool_flag(raw_args_vect, do_disassembly);
+        if (try_match_arg(raw_args_vect, cores_idx))
+        {
             check_flag_value_existance(raw_args_vect);
 
             parse_cpu_core(raw_args_vect, 1);
         }
-        if (count_duration == raw_args_vect.front()) {
-            raw_args_vect.erase(raw_args_vect.begin());
+        if (try_match_arg(raw_args_vect, count_duration))
+        {
             check_flag_value_existance(raw_args_vect);
 
             count_duration.value = convert_timeout_arg_to_seconds(raw_args_vect.front());
             raw_args_vect.erase(raw_args_vect.begin());
         }
-        if (symbol_arg == raw_args_vect.front()) {
-            raw_args_vect.erase(raw_args_vect.begin());
+        if (try_match_arg(raw_args_vect, symbol_arg))
+        {
             check_flag_value_existance(raw_args_vect);
 
             symbol_arg.value = raw_args_vect.front();
             raw_args_vect.erase(raw_args_vect.begin());
         }
-        if (record_spawn_delay == raw_args_vect.front()) {
-            raw_args_vect.erase(raw_args_vect.begin());
+        if (try_match_arg(raw_args_vect, record_spawn_delay))
+        {
             check_flag_value_existance(raw_args_vect);
 
             record_spawn_delay.value = convert_timeout_arg_to_seconds(raw_args_vect.front());
             raw_args_vect.erase(raw_args_vect.begin());
         }
-        if (sample_display_row == raw_args_vect.front()) {
-            raw_args_vect.erase(raw_args_vect.begin());
+        if (try_match_arg(raw_args_vect, sample_display_row))
+        {
             check_flag_value_existance(raw_args_vect);
             try
             {
@@ -173,21 +177,26 @@ void arg_parser::parse_sampling_args(wstr_vec& raw_args_vect)
                 throw_invalid_arg(raw_args_vect.front());
             }
         }
-        if (sample_pe_file == raw_args_vect.front()) {
-            raw_args_vect.erase(raw_args_vect.begin());
+        if (try_match_arg(raw_args_vect, sample_pe_file))
+        {
             check_flag_value_existance(raw_args_vect);
             check_file_path(raw_args_vect.front());
-        }
-        if (sample_pdb_file == raw_args_vect.front()) {
+            sample_pe_file.value = raw_args_vect.front();
+
+            fill_pdb_and_image_name_if_empty();
+            
             raw_args_vect.erase(raw_args_vect.begin());
+        }
+        if (try_match_arg(raw_args_vect, sample_pdb_file))
+        {
             check_flag_value_existance(raw_args_vect);
             check_file_path(raw_args_vect.front());
 
             sample_pdb_file.value = raw_args_vect.front();
             raw_args_vect.erase(raw_args_vect.begin());
         }
-        if (sample_image_name == raw_args_vect.front()) {
-            raw_args_vect.erase(raw_args_vect.begin());
+        if (try_match_arg(raw_args_vect, sample_image_name))
+        {
             check_flag_value_existance(raw_args_vect);
 
             sample_image_name.value = raw_args_vect.front();
@@ -226,6 +235,17 @@ void arg_parser::check_record_required_args() {
 
 
 #pragma region command line parsing after "--"
+void arg_parser::fill_pdb_and_image_name_if_empty() {
+    if (sample_image_name.value.empty())
+    {
+        sample_image_name.value = sample_pe_file.value;
+    }
+
+    if (sample_pdb_file.value.empty()) {
+        sample_pdb_file.value = ReplaceFileExtension(sample_pe_file.value, L"pdb");
+    }
+}
+
 void arg_parser::parse_record_commandline(wstr_vec& raw_args_vect)
 {
     while (raw_args_vect.size() > 0)
@@ -236,6 +256,8 @@ void arg_parser::parse_record_commandline(wstr_vec& raw_args_vect)
         {
             sample_pe_file.value = arg;
             record_commandline = arg;
+            fill_pdb_and_image_name_if_empty();
+
         }
         else
             record_commandline += L" " + arg;
@@ -246,16 +268,11 @@ void arg_parser::parse_record_commandline(wstr_vec& raw_args_vect)
 #pragma endregion
 
 #pragma region arg_matching and setting
-bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, flag_type<bool>& flag)
+bool arg_parser::try_match_and_set_bool_flag(wstr_vec& raw_args_vect, flag_type<bool>& flag)
 {
-    if (raw_args_vect.size() == 0)
-        return false;
-
-    if (!(flag == raw_args_vect.front()))
-        return false;
+    if(!try_match_arg(raw_args_vect, flag)) return false;
 
     flag.value = true;
-    raw_args_vect.erase(raw_args_vect.begin());
     return true;
 }
 
@@ -273,6 +290,22 @@ bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag)
     return true;
 }
 #pragma endregion
+
+#pragma region arg matching
+
+bool arg_parser::try_match_arg(wstr_vec& raw_args_vect, arg_base_type& flag)
+{
+    if (raw_args_vect.size() == 0)
+        return false;
+
+    if (!(flag == raw_args_vect.front()))
+        return false;
+
+    raw_args_vect.erase(raw_args_vect.begin());
+    return true;
+}
+#pragma endregion
+
 
 #pragma region Utils
 bool arg_parser::check_timeout_arg(std::wstring number_and_suffix, const std::unordered_map<std::wstring, double>& unit_map)
@@ -376,11 +409,11 @@ void arg_parser::check_next_arg(const wstr_vec& raw_args_vect) const
 void arg_parser::throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message) const
 {
     std::wstring command = L"wperf";
-    for (int i = 1; arg_array[i] != nullptr; ++i) {
+    for (int i = 1; i < arg_array.size(); ++i) {
         if (i > 0) {
-            command += L" ";
+            command.append(L" ");
         }
-        command += arg_array[i];
+        command.append(arg_array.at(i));
     }
 
     std::size_t pos = command.find(arg);

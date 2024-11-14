@@ -15,3 +15,11 @@ double ConvertNumberWithUnit(double number, std::wstring unit, const std::unorde
 
     return result;
 }
+
+std::wstring ReplaceFileExtension(std::wstring filename, std::wstring ext)
+{
+    size_t index = filename.find_last_of(L".");
+    if (index != std::string::npos)
+        filename = filename.substr(0, index) + L"." + ext;
+    return filename;
+}

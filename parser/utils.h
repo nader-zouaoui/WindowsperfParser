@@ -97,3 +97,4 @@ bool TokenizeWideStringOfInts(_In_ std::wstring Input, _In_  const wchar_t Delim
 
 
 double ConvertNumberWithUnit(double number, std::wstring unit, const std::unordered_map<std::wstring, double>& unitConversionMap);
+std::wstring ReplaceFileExtension(std::wstring filename, std::wstring ext);
