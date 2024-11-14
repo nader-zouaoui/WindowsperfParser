@@ -44,4 +44,4 @@ jobs:
       - name: Run Tests
         uses: microsoft/vstest-action@v1.0.0
         with:
-          searchFolder: D:\a\WindowsperfParser\WindowsperfParser\x64\${{env.BUILD_CONFIGURATION}}
+          searchFolder: ${{env.SOLUTION_FILE_PATH}}
