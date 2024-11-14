@@ -320,6 +320,7 @@ bool arg_parser::check_timeout_arg(std::wstring number_and_suffix, const std::un
         accept_units += pair.first;
     }
 
+
     std::wstring regex_string = L"^(0|([1-9][0-9]*))(\\.[0-9]{1,2})?(" + accept_units + L")?$";
     std::wregex r(regex_string);
 
