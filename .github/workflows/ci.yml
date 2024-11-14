@@ -46,3 +46,4 @@ jobs:
         uses: microsoft/vstest-action@v1.0.0
         with:
           searchFolder: ${{env.SOLUTION_FILE_PATH}}
+          testAssembly: x64\Release\parser-tests.dll
