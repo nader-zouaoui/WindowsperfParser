@@ -50,27 +50,29 @@ void arg_parser::parse(
         arg_array.push_back(argv[i]);
 
     }
+    try_match_and_set_arg(raw_args, do_list);
+    try_match_and_set_arg(raw_args, do_help);
+    try_match_and_set_arg(raw_args, do_version);
+    try_match_and_set_arg(raw_args, do_test);
+    try_match_and_set_arg(raw_args, do_detect);
+    try_match_and_set_arg(raw_args, do_sample);
+    try_match_and_set_arg(raw_args, do_record);
+    try_match_and_set_arg(raw_args, do_count);
 
     while (raw_args.size() > 0)
     {
         size_t initial_size = raw_args.size();
         if (command == COMMAND_CLASS::NO_COMMAND) {
-            try_match_and_set_arg(raw_args, do_list);
-            try_match_and_set_arg(raw_args, do_help);
-            try_match_and_set_arg(raw_args, do_version);
-            try_match_and_set_arg(raw_args, do_test);
-            try_match_and_set_arg(raw_args, do_detect);
-            try_match_and_set_arg(raw_args, do_sample);
-            try_match_and_set_arg(raw_args, do_record);
-            try_match_and_set_arg(raw_args, do_count);
+            throw_invalid_arg(raw_args.front(), L"Error: at least one command is needed ");
         }
-
+        
         if (command == COMMAND_CLASS::SAMPLE || command == COMMAND_CLASS::RECORD)
             parse_sampling_args(raw_args);
+       
 
         if (commands_with_no_args.find(command) != commands_with_no_args.end()) goto standard_arguments;
 
-        if (try_match_and_set_bool_flag(raw_args, record_commandline_separator)) {
+        if (try_match_arg(raw_args, record_commandline)) {
             if (command != COMMAND_CLASS::RECORD && command != COMMAND_CLASS::STAT && command != COMMAND_CLASS::TIMELINE && command != COMMAND_CLASS::SPE)
                 throw_invalid_arg(raw_args.front(), L"warning: only `stat` and `record` support process spawn!");
 
@@ -203,7 +205,32 @@ void arg_parser::parse_sampling_args(wstr_vec& raw_args_vect)
             raw_args_vect.erase(raw_args_vect.begin());
         }
 
+        if (try_match_arg(raw_args_vect, events_string)) {
+            check_flag_value_existance(raw_args_vect);
+
+            raw_args_vect.erase(raw_args_vect.begin());
+
+        }
+
         if (initial_size == raw_args_vect.size()) break;
+    }
+}
+
+void arg_parser::parse_event_list(wstring i_events) {
+    events_string.value = i_events;
+    if (command == COMMAND_CLASS::SAMPLE || command == COMMAND_CLASS::RECORD) {
+        if (i_events.rfind(ARM_SPE_EVENT_PREFIX)) command = COMMAND_CLASS::SPE;
+
+        if (i_events.rfind(L"{") != std::wstring::npos) {
+            throw_invalid_arg(L"{", L"Error: Event groups are only available in the stat command");
+        }
+    }
+    if (command == COMMAND_CLASS::STAT) {
+        if (i_events.rfind(ARM_SPE_EVENT_PREFIX)) 
+            throw_invalid_arg(ARM_SPE_EVENT_PREFIX, L"Error: SPE sampling is not available with the stat command");
+    }
+    if (commands_with_events_and_metrics.find(command) == commands_with_events_and_metrics.end()) {
+        throw_invalid_arg(events_string.key, L"Error: Event list is only supported with the commands: stat, record, sample");
     }
 }
 
@@ -214,6 +241,7 @@ void arg_parser::parse_cpu_core(wstr_vec& raw_args_vect, uint8_t MAX_CPU_CORES)
     {
         throw_invalid_arg(raw_args_vect.front());
     }
+    // TODO: add CPU core ranges
     if (cores_idx.value.size() > MAX_CPU_CORES)
     {
         std::wostringstream error_message;
@@ -255,12 +283,12 @@ void arg_parser::parse_record_commandline(wstr_vec& raw_args_vect)
         if (sample_pe_file.value.empty())
         {
             sample_pe_file.value = arg;
-            record_commandline = arg;
+            record_commandline.value = arg;
             fill_pdb_and_image_name_if_empty();
 
         }
         else
-            record_commandline += L" " + arg;
+            record_commandline.value += L" " + arg;
 
         raw_args_vect.erase(raw_args_vect.begin());
     }

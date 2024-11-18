@@ -43,6 +43,8 @@ using namespace std;
 
 typedef std::vector<std::wstring> wstr_vec;
 
+#define ARM_SPE_EVENT_PREFIX L"arm_spe_0"
+
 #pragma region arg structs
 enum COMMAND_CLASS {
     STAT,
@@ -58,8 +60,15 @@ enum COMMAND_CLASS {
     TIMELINE,
     NO_COMMAND
 };
+static const std::set<COMMAND_CLASS> commands_with_events_and_metrics = { 
+    COMMAND_CLASS::STAT, 
+    COMMAND_CLASS::SAMPLE, 
+    COMMAND_CLASS::RECORD,
+    COMMAND_CLASS::TIMELINE,
+    COMMAND_CLASS::SPE 
+};
 
-const std::set<COMMAND_CLASS> commands_with_no_args = {
+static const std::set<COMMAND_CLASS> commands_with_no_args = {
     COMMAND_CLASS::HELP,
     COMMAND_CLASS::VERSION,
     COMMAND_CLASS::LIST,
@@ -154,11 +163,11 @@ public:
       COMMAND_CLASS::RECORD
     };
     arg_type do_count = {
-          L"stat",
-          L"",
-          L"",
-          false,
-          COMMAND_CLASS::STAT
+      L"stat",
+      L"",
+      L"",
+      false,
+      COMMAND_CLASS::STAT
     };
 
 #pragma endregion
@@ -214,12 +223,12 @@ public:
       L"Enable disassemble output on sampling mode. Implies 'annotate'.",
       false,
     };
-    flag_type<bool> record_commandline_separator = {
+    flag_type<wstring> record_commandline = {
       L"--",
       L"",
       L"-- Process name is defined by COMMAND. User can pass verbatim arguments to the process with[ARGS].",
-      false,
-    };
+      L"",
+    };     // <sample_pe_file> <arg> <arg> <arg> ...
 
     flag_type<std::vector<uint8_t>> cores_idx = {
       L"-c",
@@ -275,6 +284,21 @@ public:
       L"Specify the PDB filename (and path), PDB file should directly corresponds to a PE file set with `- - pe_file`.",
       L"",
     };
+    flag_type<std::wstring> events_string = {
+        L"-e",
+        L"",
+        LR"(        Specify comma separated list of event names (or raw events) to count, for
+        example `ld_spec,vfp_spec,r10`. Use curly braces to group events.
+        Specify comma separated list of event names with sampling frequency to
+        sample, for example `ld_spec:100000`.
+
+        Raw events: specify raw evens with `r<VALUE>` where `<VALUE>` is a 16-bit
+        hexadecimal event index value without leading `0x`. For example `r10` is
+        event with index `0x10`.
+
+        Note: see list of available event names using `list` command.)",
+        L"",
+    };
 #pragma endregion
 
 #pragma region Attributes
@@ -288,7 +312,7 @@ public:
     bool do_timeline;
     bool do_man;
     bool do_export_perf_data;
-  bool do_cwd = false;        // Set current working dir for storing output files
+    bool do_cwd = false;        // Set current working dir for storing output files
     bool report_l3_cache_metric;
     bool report_ddr_bw_metric;
     uint8_t dmc_idx;
@@ -296,7 +320,6 @@ public:
     int count_timeline;
     std::wstring man_query_args;
 
-  std::wstring record_commandline;        // <sample_pe_file> <arg> <arg> <arg> ...
     std::wstring timeline_output_file;
   std::wstring m_cwd;       // Current working dir for storing output files
     std::map<uint32_t, uint32_t> sampling_inverval;     //!< [event_index] -> event_sampling_interval
@@ -317,6 +340,7 @@ private:
     void fill_pdb_and_image_name_if_empty();
     void check_record_required_args();
     void parse_sampling_args(wstr_vec& raw_args_vect);
+    void parse_event_list(wstring events_string);
     void parse_cpu_core(wstr_vec& raw_args_vect, uint8_t MAX_CPU_CORES);
     bool try_match_and_set_bool_flag(wstr_vec& raw_args_vect, flag_type<bool>& flag);
     bool try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag);

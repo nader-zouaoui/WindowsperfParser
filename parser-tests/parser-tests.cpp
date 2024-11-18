@@ -121,7 +121,7 @@ namespace parsertests
             parser.parse(argc, argv);
 
             Assert::IsTrue(parser.do_record.get());
-            Assert::AreEqual(std::wstring(L"notepad.exe test_arg"), parser.record_commandline);
+            Assert::AreEqual(std::wstring(L"notepad.exe test_arg"), parser.record_commandline.get());
             Assert::AreEqual(std::wstring(L"notepad.exe"), parser.sample_pe_file.get());
             Assert::AreEqual(std::wstring(L"notepad.pdb"), parser.sample_pdb_file.get());
             Assert::IsTrue(COMMAND_CLASS::RECORD == parser.command);
