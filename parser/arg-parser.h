@@ -233,7 +233,7 @@ public:
 #pragma endregion
 
 #pragma region Flags with arguments
-    flag_with_argument record_commandline = {
+    flag_with_argument double_dash = {
       L"--",
       L"",
       L"-- Process name is defined by COMMAND. User can pass verbatim arguments to the process with[ARGS].",
@@ -431,7 +431,7 @@ protected:
 
 #pragma region Private Methods
 private:
-    void parse_record_commandline(wstr_vec& raw_args_vect);
+    void parse_command_after_double_dash(wstr_vec& raw_args_vect);
     bool try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag);
     bool try_match_and_set_arg(wstr_vec& raw_args_vect, flag_bool_type& flag);
     bool try_match_and_set_arg(wstr_vec& raw_args_vect, flag_with_argument& flag);

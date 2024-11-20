@@ -80,9 +80,9 @@ void arg_parser::parse(
         }
 
         // Parse the extra arguments after the "--" flag 
-        if (try_match_arg(raw_args, record_commandline)) {
+        if (try_match_arg(raw_args, double_dash)) {
             raw_args.erase(raw_args.begin());
-            parse_record_commandline(raw_args);
+            parse_command_after_double_dash(raw_args);
             break;
         }
 
@@ -95,19 +95,18 @@ void arg_parser::parse(
 }
 
 #pragma region command line parsing after "--"
-void arg_parser::parse_record_commandline(wstr_vec& raw_args_vect)
+void arg_parser::parse_command_after_double_dash(wstr_vec& raw_args_vect)
 {
     while (raw_args_vect.size() > 0)
     {
         wstring arg = raw_args_vect.front();
 
-        if (sample_pe_file.value.empty())
+        if (double_dash.value.empty())
         {
-            sample_pe_file.value = arg;
-            record_commandline.value = arg;
+            double_dash.value = arg;
         }
         else {
-            record_commandline.value += L" " + arg;
+            double_dash.value += L" " + arg;
         }
         raw_args_vect.erase(raw_args_vect.begin());
     }
