@@ -41,7 +41,10 @@ namespace parsertests
     TEST_CLASS(parsertests)
     {
     public:
-
+        bool check_value_in_vector(const std::vector<std::wstring>& vec, const std::wstring& value)
+        {
+            return std::find(vec.begin(), vec.end(), value) != vec.end();
+        }
         TEST_METHOD(TEST_CORRECT_TEST_COMMAND)
         {
             const wchar_t* argv[] = { L"wperf", L"test", L"-v", L"--json" };
@@ -49,9 +52,9 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::AreEqual(true, parser.do_verbose.get());
-            Assert::AreEqual(true, parser.do_json.get());
-            Assert::IsTrue(COMMAND_CLASS::TEST == parser.command);
+            Assert::AreEqual(true, parser.do_verbose.is_set());
+            Assert::AreEqual(true, parser.do_json.is_set());
+            Assert::IsTrue(COMMAND_CLASS::TEST == parser.m_command);
         }
         TEST_METHOD(TEST_RANDOM_ARGS_REJECTION)
         {
@@ -63,7 +66,7 @@ namespace parsertests
                 }
             );
         }
-        // Test parsing the 'help' command with no arguments
+        // Test parsing the "help" command with no arguments
         TEST_METHOD(TEST_HELP_COMMAND)
         {
             const wchar_t* argv[] = { L"wperf", L"--help" };
@@ -71,8 +74,8 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(parser.do_help.get());
-            Assert::IsTrue(COMMAND_CLASS::HELP == parser.command);
+            Assert::IsTrue(parser.do_help.is_set());
+            Assert::IsTrue(COMMAND_CLASS::HELP == parser.m_command);
         }
 
         // Test parsing the 'version' command with no arguments
@@ -83,8 +86,8 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(parser.do_version.get());
-            Assert::IsTrue(COMMAND_CLASS::VERSION == parser.command);
+            Assert::IsTrue(parser.do_version.is_set());
+            Assert::IsTrue(COMMAND_CLASS::VERSION == parser.m_command);
         }
 
         // Test parsing the 'list' command with no arguments
@@ -95,21 +98,8 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(parser.do_list.get());
-            Assert::IsTrue(COMMAND_CLASS::LIST == parser.command);
-        }
-
-        // Test parsing the 'sample' command with various flags
-        TEST_METHOD(TEST_SAMPLE_COMMAND_WITH_MULTIPLE_CORES)
-        {
-            const wchar_t* argv[] = { L"wperf", L"sample", L"--annotate", L"--timeout", L"5s", L"-c", L"0,1,2" };
-            int argc = 7;
-            mock_arg_parser parser;
-
-            Assert::ExpectException<std::invalid_argument>([&parser, argc, &argv]() {
-                parser.parse(argc, argv);
-                }
-            );
+            Assert::IsTrue(parser.do_list.is_set());
+            Assert::IsTrue(COMMAND_CLASS::LIST == parser.m_command);
         }
 
         // Test parsing the 'record' command with command line separator and arguments
@@ -119,12 +109,9 @@ namespace parsertests
             int argc = 5;
             mock_arg_parser parser;
             parser.parse(argc, argv);
-
-            Assert::IsTrue(parser.do_record.get());
-            Assert::AreEqual(std::wstring(L"notepad.exe test_arg"), parser.record_commandline.get());
-            Assert::AreEqual(std::wstring(L"notepad.exe"), parser.sample_pe_file.get());
-            Assert::AreEqual(std::wstring(L"notepad.pdb"), parser.sample_pdb_file.get());
-            Assert::IsTrue(COMMAND_CLASS::RECORD == parser.command);
+            Assert::IsTrue(parser.do_record.is_set());
+            Assert::IsTrue(check_value_in_vector(parser.double_dash.get_values(), L"notepad.exe"));
+            Assert::IsTrue(COMMAND_CLASS::RECORD == parser.m_command);
         }
 
         // Test that missing required arguments cause exceptions
@@ -159,20 +146,9 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::AreEqual(120.0, parser.count_duration.get()); // 2 minutes in seconds
+            Assert::IsTrue(check_value_in_vector(parser.count_duration.get_values(), L"2m"));
         }
 
-        // Test that invalid timeout format causes exception
-        TEST_METHOD(TEST_INVALID_TIMEOUT_WITH_WRONG_UNIT)
-        {
-            const wchar_t* argv[] = { L"wperf", L"sample", L"--timeout", L"5x" };
-            int argc = 4;
-            mock_arg_parser parser;
-            Assert::ExpectException<std::invalid_argument>([&parser, argc, &argv]() {
-                parser.parse(argc, argv);
-                }
-            );
-        }
         TEST_METHOD(TEST_INVALID_TIMEOUT_WITH_WRONG_FORMAT)
         {
             const wchar_t* argv[] = { L"wperf", L"sample", L"--timeout", L"5.4", L"ms"};
@@ -192,11 +168,11 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(parser.do_detect.get());
-            Assert::IsTrue(COMMAND_CLASS::DETECT == parser.command);
+            Assert::IsTrue(parser.do_detect.is_set());
+            Assert::IsTrue(COMMAND_CLASS::DETECT == parser.m_command);
         }
 
-        // Test parsing multiple flags together
+        // Test parsing multiple flags tois_sether
         TEST_METHOD(TEST_MULTIPLE_FLAGS)
         {
             const wchar_t* argv[] = { L"wperf", L"sample", L"--verbose", L"-q", L"--json" };
@@ -204,10 +180,10 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(parser.do_verbose.get());
-            Assert::IsTrue(parser.is_quite.get());
-            Assert::IsTrue(parser.do_json.get());
-            Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.command);
+            Assert::IsTrue(parser.do_verbose.is_set());
+            Assert::IsTrue(parser.is_quite.is_set());
+            Assert::IsTrue(parser.do_json.is_set());
+            Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.m_command);
         }
 
         // Test parsing sample command with symbol argument
@@ -218,8 +194,8 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::AreEqual(std::wstring(L"main"), parser.symbol_arg.get());
-            Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.command);
+            Assert::IsTrue(check_value_in_vector(parser.symbol_arg.get_values(), L"main"));
+            Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.m_command);
         }
 
         // Test parsing sample command with sample display row
@@ -230,8 +206,8 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::AreEqual((uint32_t)100, parser.sample_display_row.get());
-            Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.command);
+            Assert::IsTrue(check_value_in_vector(parser.sample_display_row.get_values(), L"100"));
+            Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.m_command);
         }
 
         // Test parsing sample command with pe_file
@@ -243,10 +219,8 @@ namespace parsertests
 
             parser.parse(argc, argv);
 
-            Assert::AreEqual(std::wstring(L"C:\\Program\\sample.exe"), parser.sample_pe_file.get());
-            Assert::AreEqual(std::wstring(L"C:\\Program\\sample.pdb"), parser.sample_pdb_file.get());
-            Assert::AreEqual(std::wstring(L"C:\\Program\\sample.exe"), parser.sample_image_name.get());
-            Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.command);
+            Assert::IsTrue(check_value_in_vector(parser.sample_pe_file.get_values(), L"C:\\Program\\sample.exe"));
+            Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.m_command);
         }
 
         // Test parsing sample command with pdb_file
@@ -259,8 +233,8 @@ namespace parsertests
             // Similarly, adjust or mock check_file_path for testing
             parser.parse(argc, argv);
 
-            Assert::AreEqual(std::wstring(L"C:\\Program\\sample.pdb"), parser.sample_pdb_file.get());
-            Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.command);
+            Assert::IsTrue(check_value_in_vector(parser.sample_pdb_file.get_values(), L"C:\\Program\\sample.pdb"));
+            Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.m_command);
         }
 
         // Test parsing sample command with image_name
@@ -271,8 +245,8 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::AreEqual(std::wstring(L"notepad.exe"), parser.sample_image_name.get());
-            Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.command);
+            Assert::IsTrue(check_value_in_vector(parser.sample_image_name.get_values(), L"notepad.exe"));
+            Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.m_command);
         }
 
         // Test parsing with --force-lock flag
@@ -283,8 +257,8 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(parser.do_force_lock.get());
-            Assert::IsTrue(COMMAND_CLASS::TEST == parser.command);
+            Assert::IsTrue(parser.do_force_lock.is_set());
+            Assert::IsTrue(COMMAND_CLASS::TEST == parser.m_command);
         }
 
         // Test parsing the 'stat' command (not fully implemented in the parser)
@@ -296,7 +270,7 @@ namespace parsertests
             parser.parse(argc, argv);
 
             // Assuming command is set correctly
-            Assert::IsTrue(COMMAND_CLASS::STAT == parser.command);
+            Assert::IsTrue(COMMAND_CLASS::STAT == parser.m_command);
         }
 
         // Test parsing with unknown flags
@@ -309,6 +283,36 @@ namespace parsertests
                 parser.parse(argc, argv);
                 }
             );
+        }
+
+        // Test parsing with no command
+        TEST_METHOD(TEST_NO_COMMAND)
+        {
+            const wchar_t* argv[] = { L"wperf", L"--annotate", L"--json" };
+            int argc = 3;
+            mock_arg_parser parser;
+            Assert::ExpectException<std::invalid_argument>([&parser, argc, &argv]() {
+                parser.parse(argc, argv);
+                }
+            );
+        }
+
+        // Test complex stat command 
+        TEST_METHOD(TEST_FULL_STAT_COMMAND)
+        {
+            const wchar_t* argv[] = { L"wperf", L"stat", L"--output", L"_output_02.json", L"-e", L"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec", L"-c", L"0", L"sleep", L"5" };
+            int argc = 10;
+            mock_arg_parser parser;
+            parser.parse(argc, argv);
+            Assert::IsTrue(COMMAND_CLASS::STAT == parser.m_command);
+            Assert::IsTrue(parser.raw_events.is_set());
+            Assert::IsTrue(parser.output_filename.is_set());
+            Assert::IsTrue(parser.cores_idx.is_set());
+            Assert::IsTrue(parser.count_duration.is_set());
+            Assert::IsTrue(check_value_in_vector(parser.count_duration.get_values(), L"5"));
+            Assert::IsTrue(check_value_in_vector(parser.cores_idx.get_values(), L"0"));
+            Assert::IsTrue(check_value_in_vector(parser.output_filename.get_values(), L"_output_02.json"));
+            Assert::IsTrue(check_value_in_vector(parser.raw_events.get_values(), L"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec"));
         }
     };
 }

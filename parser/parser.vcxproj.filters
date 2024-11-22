@@ -21,7 +21,7 @@
     <ClCompile Include="arg-parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="utils.cpp">
+    <ClCompile Include="arg-parser-arg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -29,7 +29,7 @@
     <ClInclude Include="arg-parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="utils.h">
+    <ClInclude Include="arg-parser-arg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

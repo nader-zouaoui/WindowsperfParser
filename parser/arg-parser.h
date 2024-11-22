@@ -37,15 +37,13 @@
 #include <string>
 #include <set>
 #include <unordered_map>
+#include "arg-parser-arg.h"
 
 using namespace std;
 
 
 typedef std::vector<std::wstring> wstr_vec;
 
-#define ARM_SPE_EVENT_PREFIX L"arm_spe_0"
-
-#pragma region arg structs
 enum COMMAND_CLASS {
     STAT,
     SAMPLE,
@@ -56,49 +54,25 @@ enum COMMAND_CLASS {
     VERSION,
     LIST,
     MAN,
-    SPE,
-    TIMELINE,
     NO_COMMAND
 };
-static const std::set<COMMAND_CLASS> commands_with_events_and_metrics = { 
-    COMMAND_CLASS::STAT, 
-    COMMAND_CLASS::SAMPLE, 
-    COMMAND_CLASS::RECORD,
-    COMMAND_CLASS::TIMELINE,
-    COMMAND_CLASS::SPE 
-};
 
-static const std::set<COMMAND_CLASS> commands_with_no_args = {
-    COMMAND_CLASS::HELP,
-    COMMAND_CLASS::VERSION,
-    COMMAND_CLASS::LIST,
-    COMMAND_CLASS::DETECT,
-    COMMAND_CLASS::TEST,
-};
-
-struct arg_base_type {
-    const wstring key;
-    const wstring alias;
-    inline bool operator==(const wstring& arg) const {
-      return is_match(arg);
-    }
-    bool is_match(const wstring& arg) const {
-      return !arg.empty() && (arg == key || arg == alias);
-    }
+class arg_parser_arg_command : public arg_parser_arg_opt {
+public:
+    arg_parser_arg_command(
+        const std::wstring name,
+        const std::vector<std::wstring> alias,
+        const std::wstring description,
+        const std::wstring examples,
+        const COMMAND_CLASS command
+    ) : arg_parser_arg_opt(name, alias, description), m_examples(examples), m_command(command) {};
+    const COMMAND_CLASS m_command = NO_COMMAND;
+    const std::wstring m_examples;
 
 };
-template <typename T = bool>
-struct flag_type : arg_base_type {
-    wstring description;
-    T value;
-    T get() const {
-      return value;
-    }
-};
+#pragma region arg structs
 
-struct arg_type : flag_type<bool> {
-    const COMMAND_CLASS command;
-};
+
 #pragma endregion
 
 class arg_parser
@@ -107,247 +81,318 @@ public:
 #pragma region Methods
     arg_parser();
     void parse(
-      _In_ const int argc,
-      _In_reads_(argc) const wchar_t* argv[]
+        _In_ const int argc,
+        _In_reads_(argc) const wchar_t* argv[]
     );
 #pragma endregion
 
 #pragma region Commands
-    arg_type do_list = {
-      L"list",
-      L"-l",
-      L"",
-      false,
-      COMMAND_CLASS::LIST
-    };
-    arg_type do_test = {
-      L"test",
-      L"",
-      L"",
-      false,
-      COMMAND_CLASS::TEST
-    };
-    arg_type do_help = {
-      L"-h",
-      L"--help",
-      L"",
-      false,
-      COMMAND_CLASS::HELP
-    };
-    arg_type do_version = {
-      L"--version",
-      L"",
-      L"",
-      false,
-      COMMAND_CLASS::VERSION
-    };
-    arg_type do_detect = {
-      L"detect",
-      L"",
-      L"",
-      false,
-      COMMAND_CLASS::DETECT
-    };
-    arg_type do_sample = {
-      L"sample",
-      L"",
-      L"",
-      false,
-      COMMAND_CLASS::SAMPLE
-    };
-    arg_type do_record = {
-      L"record",
-      L"",
-      L"",
-      false,
-      COMMAND_CLASS::RECORD
-    };
-    arg_type do_count = {
-      L"stat",
-      L"",
-      L"",
-      false,
-      COMMAND_CLASS::STAT
-    };
+    arg_parser_arg_command do_list = arg_parser_arg_command::arg_parser_arg_command(
+        L"list",
+        { L"-l" },
+        L"List available metrics and events.",
+        L"",
+        COMMAND_CLASS::LIST
+    );
+
+    arg_parser_arg_command do_test = arg_parser_arg_command::arg_parser_arg_command(
+        L"test",
+        { L"" },
+        L"",
+        L"",
+        COMMAND_CLASS::TEST
+    );
+    arg_parser_arg_command do_help = arg_parser_arg_command::arg_parser_arg_command(
+        L"-h",
+        { L"--help" },
+        L"",
+        L"",
+        COMMAND_CLASS::HELP
+    );
+    arg_parser_arg_command do_version = arg_parser_arg_command::arg_parser_arg_command(
+        L"--version",
+        { L"" },
+        L"",
+        L"",
+        COMMAND_CLASS::VERSION
+    );
+    arg_parser_arg_command do_detect = arg_parser_arg_command::arg_parser_arg_command(
+        L"detect",
+        { L"" },
+        L"",
+        L"",
+        COMMAND_CLASS::DETECT
+    );
+    arg_parser_arg_command do_sample = arg_parser_arg_command::arg_parser_arg_command(
+        L"sample",
+        { L"" },
+        L"",
+        L"",
+        COMMAND_CLASS::SAMPLE
+    );
+    arg_parser_arg_command do_record = arg_parser_arg_command::arg_parser_arg_command(
+        L"record",
+        { L"" },
+        L"",
+        L"",
+        COMMAND_CLASS::RECORD
+    );
+    arg_parser_arg_command do_count = arg_parser_arg_command::arg_parser_arg_command(
+        L"stat",
+        { L"" },
+        L"",
+        L"",
+        COMMAND_CLASS::STAT
+    );
+    arg_parser_arg_command do_man = arg_parser_arg_command::arg_parser_arg_command(
+        L"stat",
+        { L"" },
+        L"",
+        L"",
+        COMMAND_CLASS::MAN
+    );
 
 #pragma endregion
 
-#pragma region Flags
-    flag_type<bool> do_json = {
-      L"--json",
-      L"",
-      L"Define output type as JSON.",
-      false,
-    };
-    flag_type<bool> do_kernel = {
-      L"--k",
-      L"",
-      L"Count kernel mode as well (disabled by default).",
-      false,
-    };
-    flag_type<bool> do_force_lock = {
-      L"--force-lock",
-      L"",
-      LR"(Force driver to give lock to current `wperf` process, use when you want
-      to interrupt currently executing `wperf` session or to recover from the lock.)",
-      false,
-    };
+#pragma region Boolean Flags
+    arg_parser_arg_opt do_json = arg_parser_arg_opt::arg_parser_arg_opt(
+        L"--json",
+        {},
+        L"Define output type as JSON.",
+        {}
+    );
+    arg_parser_arg_opt do_kernel = arg_parser_arg_opt::arg_parser_arg_opt(
+        L"-k",
+        {},
+        L"Count kernel mode as well (disabled by default).",
+        {}
+    );
+    arg_parser_arg_opt do_force_lock = arg_parser_arg_opt::arg_parser_arg_opt(
+        L"--force-lock",
+        {},
+        L"Force driver to give lock to current `wperf` process, use when you want to interrupt currently executing `wperf` session or to recover from the lock.",
+        {}
+    );
     // used to be called sample_display_short
-    flag_type<bool> sample_display_long = {
-      L"--sample-display-long",
-      L"",
-      L"Display decorated symbol names.",
-      false,
-    };
-    flag_type<bool> do_verbose = {
-      L"--verbose",
-      L"-v",
-      L"Enable verbose output also in JSON output.",
-      false,
-    };
-    flag_type<bool> is_quite = {
-      L"-q",
-      L"",
-      L"Quiet mode, no output is produced.",
-      false,
-    };
-    flag_type<bool> do_annotate = {
-      L"--annotate",
-      L"",
-      L"Enable translating addresses taken from samples in sample/record mode into source code line numbers.",
-      false,
-    };
-    flag_type<bool> do_disassembly = {
-      L"--disassemble",
-      L"",
-      L"Enable disassemble output on sampling mode. Implies 'annotate'.",
-      false,
-    };
-    flag_type<wstring> record_commandline = {
-      L"--",
-      L"",
-      L"-- Process name is defined by COMMAND. User can pass verbatim arguments to the process with[ARGS].",
-      L"",
-    };     // <sample_pe_file> <arg> <arg> <arg> ...
+    arg_parser_arg_opt sample_display_long = arg_parser_arg_opt::arg_parser_arg_opt(
+        L"--sample-display-long",
+        {},
+        L"Display decorated symbol names.",
+        {}
+    );
+    arg_parser_arg_opt do_verbose = arg_parser_arg_opt::arg_parser_arg_opt(
+        L"--verbose",
+        { L"-v" },
+        L"Enable verbose output also in JSON output.",
+        {}
+    );
+    arg_parser_arg_opt is_quite = arg_parser_arg_opt::arg_parser_arg_opt(
+        L"-q",
+        {},
+        L"Quiet mode, no output is produced.",
+        {}
+    );
+    arg_parser_arg_opt do_annotate = arg_parser_arg_opt::arg_parser_arg_opt(
+        L"--annotate",
+        {},
+        L"Enable translating addresses taken from samples in sample/record mode into source code line numbers.",
+        {}
+    );
+    arg_parser_arg_opt do_disassembly = arg_parser_arg_opt::arg_parser_arg_opt(
+        L"--disassemble",
+        {},
+        L"Enable disassemble output on sampling mode. Implies 'annotate'.",
+        {}
+    );
+    arg_parser_arg_opt do_timeline = arg_parser_arg_opt::arg_parser_arg_opt(
+        L"-t",
+        {},
+        L"Enable timeline mode (count multiple times with specified interval). Use `-i` to specify timeline interval, and `-n` to specify number of counts.",
+        {}
+    );
 
-    flag_type<std::vector<uint8_t>> cores_idx = {
-      L"-c",
-      L"--cores",
-      L"Specify comma separated list of CPU cores, and or ranges of CPU cores, to count on, or one CPU to sample on.",
-      std::vector<uint8_t> {},
-    };
 
-    flag_type<double> count_duration = {
-      L"--timeout",
-      L"sleep",
-      LR"(Specify counting or sampling duration. If not specified, press
-      Ctrl+C to interrupt counting or sampling. Input may be suffixed by
-      one (or none) of the following units, with up to 2 decimal
-      points: "ms", "s", "m", "h", "d" (i.e. milliseconds, seconds,
-      minutes, hours, days). If no unit is provided, the default unit
-      is seconds. Accuracy is 0.1 sec.)",
-      -1.0,
-    };
-    flag_type<std::wstring> symbol_arg = {
-      L"--symbol",
-      L"-s",
-      L"Filter results for specific symbols (for use with 'record' and 'sample' commands).",
-      L"",
-    };
-    flag_type<uint32_t> record_spawn_delay = {
-      L"--record_spawn_delay",
-      L"",
-      L"Set the waiting time, in milliseconds, before reading process data after spawning it with `record`.",
-      1000,
-    };
-    flag_type<uint32_t> sample_display_row = {
-      L"--sample-display-row",
-      L"",
-      L"Set how many samples you want to see in the summary (50 by default).",
-      50,
-    };
-    flag_type<std::wstring> sample_pe_file = {
-      L"--pe_file",
-      L"",
-      L"Specify the PE filename (and path).",
-      L"",
-    };
-    flag_type<std::wstring> sample_image_name = {
-      L"--image_name",
-      L"",
-      L"Specify the image name you want to sample.",
-      L"",
-    };
-    flag_type<std::wstring> sample_pdb_file = {
-      L"--pdb_file",
-      L"",
-      L"Specify the PDB filename (and path), PDB file should directly corresponds to a PE file set with `- - pe_file`.",
-      L"",
-    };
-    flag_type<std::wstring> events_string = {
+#pragma endregion
+
+#pragma region Flags with arguments
+    arg_parser_arg_pos double_dash = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"--",
+        {},
+        L"-- Process name is defined by COMMAND. User can pass verbatim arguments to the process with[ARGS].",
+        {},
+        -1
+    );
+
+    arg_parser_arg_pos cores_idx = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"-c",
+        { L"--cores" },
+        L"Specify comma separated list of CPU cores, and or ranges of CPU cores, to count on, or one CPU to sample on.",
+        {}
+    );
+
+    arg_parser_arg_pos count_duration = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"--timeout",
+        { L"sleep" },
+        L"Specify counting or sampling duration. If not specified, press Ctrl+C to interrupt counting or sampling. Input may be suffixed by one (or none) of the following units, with up to 2 decimal points: \"ms\", \"s\", \"m\", \"h\", \"d\" (i.e. milliseconds, seconds, minutes, hours, days). If no unit is provided, the default unit is seconds. Accuracy is 0.1 sec.",
+        {}
+    );
+    arg_parser_arg_pos symbol_arg = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"--symbol",
+        { L"-s" },
+        L"Filter results for specific symbols (for use with 'record' and 'sample' commands).",
+        {}
+    );
+    arg_parser_arg_pos record_spawn_delay = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"--record_spawn_delay",
+        {},
+        L"Set the waiting time, in milliseconds, before reading process data after spawning it with `record`.",
+        {}
+    );
+    arg_parser_arg_pos sample_display_row = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"--sample-display-row",
+        {},
+        L"Set how many samples you want to see in the summary (50 by default).",
+        { L"50" }
+    );
+    arg_parser_arg_pos sample_pe_file = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"--pe_file",
+        {},
+        L"Specify the PE filename (and path).",
+        {}
+    );
+    arg_parser_arg_pos sample_image_name = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"--image_name",
+        {},
+        L"Specify the image name you want to sample.",
+        {}
+    );
+    arg_parser_arg_pos sample_pdb_file = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"--pdb_file",
+        {},
+        L"Specify the PDB filename (and path), PDB file should directly corresponds to a PE file set with `--pe_file`.",
+        {}
+    );
+    arg_parser_arg_pos metric_config = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"-C",
+        {},
+        L"Provide customized config file which describes metrics.",
+        {}
+    );
+    arg_parser_arg_pos event_config = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"-E",
+        {},
+        L"Provide customized config file which describes custom events or provide custom events from the command line.",
+        {}
+    );
+    arg_parser_arg_pos output_filename = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"--output",
+        { L"-o" },
+        L"Specify JSON output filename.",
+        {}
+    );
+    arg_parser_arg_pos output_csv_filename = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"--output-csv",
+        {},
+        L"Specify CSV output filename. Only with timeline `-t`.",
+        {}
+    );
+    arg_parser_arg_pos m_cwd = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"--output-prefix",
+        { L"--cwd" },
+        L"Set current working dir for storing output JSON and CSV file.",
+        {}
+    );
+    arg_parser_arg_pos drv_config = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"--config",
+        {},
+        L"Specify configuration parameters.",
+        {}
+    );
+    arg_parser_arg_pos count_interval = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"-i",
+        {},
+        L"Specify counting interval. `0` seconds is allowed. Input may be suffixed with one(or none) of the following units, with up to 2 decimal points : \"ms\", \"s\", \"m\", \"h\", \"d\" (i.e.milliseconds, seconds, minutes, hours, days).If no unit is provided, the default unit is seconds(60s by default).",
+        {}
+    );
+    arg_parser_arg_pos timeline_count = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"-i",
+        {},
+        L"Number of consecutive counts in timeline mode (disabled by default).",
+        {}
+    );
+    arg_parser_arg_pos dmc_idx = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"--dmc",
+        {},
+        L"Profile on the specified DDR controller. Skip `--dmc` to count on all DMCs.",
+        {}
+    );
+    arg_parser_arg_pos raw_metrics = arg_parser_arg_pos::arg_parser_arg_pos(
+        L"-m",
+        {},
+        L"Specify comma separated list of metrics to count.\n\nNote: see list of available metric names using `list` command.",
+        {}
+    );
+    arg_parser_arg_pos raw_events = arg_parser_arg_pos::arg_parser_arg_pos(
         L"-e",
-        L"",
-        LR"(        Specify comma separated list of event names (or raw events) to count, for
-        example `ld_spec,vfp_spec,r10`. Use curly braces to group events.
-        Specify comma separated list of event names with sampling frequency to
-        sample, for example `ld_spec:100000`.
-
-        Raw events: specify raw evens with `r<VALUE>` where `<VALUE>` is a 16-bit
-        hexadecimal event index value without leading `0x`. For example `r10` is
-        event with index `0x10`.
-
-        Note: see list of available event names using `list` command.)",
-        L"",
-    };
+        {},
+        L"Specify comma separated list of event names (or raw events) to count, for example `ld_spec,vfp_spec,r10`. Use curly braces to group events. Specify comma separated list of event names with sampling frequency to sample, for example `ld_spec:100000`. Raw events: specify raw evens with `r<VALUE>` where `<VALUE>` is a 16-bit hexadecimal event index value without leading `0x`. For example `r10` is event with index `0x10`. Note: see list of available event names using `list` command.",
+        {}
+    );
 #pragma endregion
 
 #pragma region Attributes
 
-    COMMAND_CLASS command = COMMAND_CLASS::NO_COMMAND;
-    wstr_vec arg_array;
+    COMMAND_CLASS m_command = COMMAND_CLASS::NO_COMMAND;
+    std::vector<arg_parser_arg_command*> m_commands_list = {
+       &do_list,
+       &do_test,
+       &do_help,
+       &do_version,
+       &do_detect,
+       &do_sample,
+       &do_record,
+       &do_count,
+       &do_man
+    };
+    
+    std::vector<arg_parser_arg*> m_flags_list = {
+       &do_json,
+       &do_kernel,
+       &do_force_lock,
+       &sample_display_long,
+       &do_verbose,
+       &is_quite,
+       &do_annotate,
+       &do_disassembly,
+       &do_timeline,
+       &cores_idx,
+       &count_duration,
+       &symbol_arg,
+       &record_spawn_delay,
+       &sample_display_row,
+       &sample_pe_file,
+       &sample_image_name,
+       &sample_pdb_file,
+       &metric_config,
+       &event_config,
+       &output_filename,
+       &output_csv_filename,
+       &m_cwd,
+       &drv_config,
+       &count_interval,
+       &timeline_count,
+       &dmc_idx,
+       &raw_metrics,
+       &raw_events,
+       &double_dash
+    };
 
-#pragma endregion
+    wstr_vec m_arg_array;
 
-#pragma region Not implemented yet
-    bool do_timeline;
-    bool do_man;
-    bool do_export_perf_data;
-    bool do_cwd = false;        // Set current working dir for storing output files
-    bool report_l3_cache_metric;
-    bool report_ddr_bw_metric;
-    uint8_t dmc_idx;
-    double count_interval;
-    int count_timeline;
-    std::wstring man_query_args;
-
-    std::wstring timeline_output_file;
-  std::wstring m_cwd;       // Current working dir for storing output files
-    std::map<uint32_t, uint32_t> sampling_inverval;     //!< [event_index] -> event_sampling_interval
-  bool m_sampling_with_spe = false;       // SPE: User requested sampling with SPE
-    std::map<std::wstring, uint64_t> m_sampling_flags;      // SPE: sampling flags
 #pragma endregion
 
 #pragma region Protected Methods
 protected:
-    virtual void check_file_path(wstring file_path);
     void throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message = L"") const;
-#pragma endregion
-
-#pragma region Private Methods
-private:
-    void parse_record_commandline(wstr_vec& raw_args_vect);
-    void check_sampling_required_args();
-    void fill_pdb_and_image_name_if_empty();
-    void check_record_required_args();
-    void parse_sampling_args(wstr_vec& raw_args_vect);
-    void parse_event_list(wstring events_string);
-    void parse_cpu_core(wstr_vec& raw_args_vect, uint8_t MAX_CPU_CORES);
-    bool try_match_and_set_bool_flag(wstr_vec& raw_args_vect, flag_type<bool>& flag);
-    bool try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag);
-    bool try_match_arg(wstr_vec& raw_args_vect, arg_base_type& flag);
-    bool check_timeout_arg(std::wstring number_and_suffix, const std::unordered_map<std::wstring, double>& unit_map);
-    double convert_timeout_arg_to_seconds(std::wstring number_and_suffix);
-    void check_next_arg(const wstr_vec& raw_args_vect) const;
-    void check_flag_value_existance(const wstr_vec& raw_args_vect) const;
 #pragma endregion
 };
