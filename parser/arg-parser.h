@@ -56,13 +56,6 @@ enum COMMAND_CLASS {
     MAN,
     NO_COMMAND
 };
-static const std::set<COMMAND_CLASS> commands_with_events_and_metrics = { 
-    COMMAND_CLASS::STAT, 
-    COMMAND_CLASS::SAMPLE, 
-    COMMAND_CLASS::RECORD,
-    COMMAND_CLASS::TIMELINE,
-    COMMAND_CLASS::SPE 
-};
 
 class arg_parser_arg_command : public arg_parser_arg_opt {
 public:

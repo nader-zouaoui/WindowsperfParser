@@ -49,14 +49,6 @@ void arg_parser::parse(
         raw_args.push_back(argv[i]);
         m_arg_array.push_back(argv[i]);
     }
-    try_match_and_set_arg(raw_args, do_list);
-    try_match_and_set_arg(raw_args, do_help);
-    try_match_and_set_arg(raw_args, do_version);
-    try_match_and_set_arg(raw_args, do_test);
-    try_match_and_set_arg(raw_args, do_detect);
-    try_match_and_set_arg(raw_args, do_sample);
-    try_match_and_set_arg(raw_args, do_record);
-    try_match_and_set_arg(raw_args, do_count);
 
     if (raw_args.size() == 0)
         throw_invalid_arg(L"", L"warning: No arguments were found!");
