@@ -47,18 +47,22 @@ void arg_parser::parse(
     for (int i = 1; i < argc; i++)
     {
         raw_args.push_back(argv[i]);
-        arg_array.push_back(argv[i]);
+        m_arg_array.push_back(argv[i]);
     }
 
     if (raw_args.size() == 0)
-        throw_invalid_arg(L"", L"warning: No commands were found!");
+        throw_invalid_arg(L"", L"warning: No arguments were found!");
 
 #pragma region Command Selector
-    for (auto& command : commands_list)
+    for (auto& command : m_commands_list)
     {
-        try_match_and_set_arg(raw_args, *command);
+        if (command->parse(raw_args)) {
+            m_command = command->m_command;
+            raw_args.erase(raw_args.begin());
+            break;
+        }
     }
-    if (command == COMMAND_CLASS::NO_COMMAND) {
+    if (m_command == COMMAND_CLASS::NO_COMMAND) {
         throw_invalid_arg(raw_args.front(), L"warning: command not recognized!");
     }
 #pragma endregion
@@ -67,23 +71,18 @@ void arg_parser::parse(
     {
         size_t initial_size = raw_args.size();
 
-        // Set boolean flags to tru if they exist
-        for (auto& bool_flag : boolean_flags)
+        for (auto& current_flag : m_flags_list)
         {
-            try_match_and_set_arg(raw_args, *bool_flag);
-        }
-
-        // Set the string value for the flags that should have arguments
-        for (auto& flag_with_argument : flags_with_argument)
-        {
-            try_match_and_set_arg(raw_args, *flag_with_argument);
-        }
-
-        // Parse the extra arguments after the "--" flag 
-        if (try_match_arg(raw_args, double_dash)) {
-            raw_args.erase(raw_args.begin());
-            parse_command_after_double_dash(raw_args);
-            break;
+            try
+            {
+                if (current_flag->parse(raw_args)) {
+                    raw_args.erase(raw_args.begin(), raw_args.begin() + current_flag->get_arg_count() + 1);
+                }
+            }
+            catch (const std::exception& err)
+            {
+                throw_invalid_arg(raw_args.front(), L"Error: " + std::wstring(err.what(), err.what() + std::strlen(err.what())));
+            }
         }
 
         // if going over all the known arguments doesn't affect the size of the raw_args, then the command is unkown
@@ -94,104 +93,15 @@ void arg_parser::parse(
     }
 }
 
-#pragma region command line parsing after "--"
-void arg_parser::parse_command_after_double_dash(wstr_vec& raw_args_vect)
-{
-    while (raw_args_vect.size() > 0)
-    {
-        wstring arg = raw_args_vect.front();
-
-        if (double_dash.value.empty())
-        {
-            double_dash.value = arg;
-        }
-        else {
-            double_dash.value += L" " + arg;
-        }
-        raw_args_vect.erase(raw_args_vect.begin());
-    }
-    raw_args_vect.clear();
-}
-#pragma endregion
-
-#pragma region arg_matching and setting
-
-bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, arg_type& flag)
-{
-    if (raw_args_vect.size() == 0)
-        return false;
-
-    if (!(flag == raw_args_vect.front()))
-        return false;
-
-    flag.value = true;
-    command = flag.command;
-    raw_args_vect.erase(raw_args_vect.begin());
-    return true;
-}
-
-bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, flag_bool_type& flag)
-{
-    if (raw_args_vect.size() == 0)
-        return false;
-
-    if (!(flag == raw_args_vect.front()))
-        return false;
-
-    flag.value = true;
-    raw_args_vect.erase(raw_args_vect.begin());
-    return true;
-}
-
-bool arg_parser::try_match_and_set_arg(wstr_vec& raw_args_vect, flag_with_argument& flag)
-{
-    if (!try_match_arg(raw_args_vect, flag)) return false;
-    raw_args_vect.erase(raw_args_vect.begin());
-    check_flag_value_existance(raw_args_vect);
-
-    flag.value = raw_args_vect.front();
-    raw_args_vect.erase(raw_args_vect.begin());
-    return true;
-}
-
-bool arg_parser::try_match_arg(wstr_vec& raw_args_vect, arg_base_type& flag)
-{
-    if (raw_args_vect.size() == 0)
-        return false;
-
-    if (!(flag == raw_args_vect.front()))
-        return false;
-
-    return true;
-}
-#pragma endregion
-
 #pragma region error handling
-void arg_parser::check_flag_value_existance(const wstr_vec& raw_args_vect) const
-{
-    check_next_arg(raw_args_vect);
-    if (raw_args_vect.front().find(L"-") == 0)
-    {
-        throw_invalid_arg(raw_args_vect.front(), L"Hint: Missing value for argument!");
-    }
-}
-
-void arg_parser::check_next_arg(const wstr_vec& raw_args_vect) const
-{
-    if (raw_args_vect.size() == 0)
-    {
-        throw_invalid_arg(L"");
-    }
-}
-
 void arg_parser::throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message) const
 {
     std::wstring command = L"wperf";
-    for (int i = 1; i < arg_array.size(); ++i) {
+    for (int i = 1; i < m_arg_array.size(); ++i) {
         if (i > 0) {
             command.append(L" ");
         }
-        command.append(arg_array.at(i));
+        command.append(m_arg_array.at(i));
     }
 
     std::size_t pos = command.find(arg);

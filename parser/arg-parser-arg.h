@@ -22,7 +22,8 @@ public:
         const std::wstring name,
         const std::vector<std::wstring> alias,
         const std::wstring description,
-        const int arg_count
+        const std::vector<std::wstring> default_values = {},
+        const int arg_count = 0
     );
     bool is_match(const std::wstring& arg) const;
     virtual std::wstring get_help() const;
@@ -33,34 +34,30 @@ public:
     std::wstring get_alias_string() const;
     arg_parser_arg add_check_func(std::function<bool(const std::wstring&)> check_func);
     void set_is_parsed();
+    bool is_parsed();
+    bool is_set();
+    std::vector<std::wstring> get_values();
     bool parse(std::vector<std::wstring> arg_vect);
 };
 
-class arg_parser_arg_opt : arg_parser_arg {
+class arg_parser_arg_opt : public arg_parser_arg {
+public:
     arg_parser_arg_opt(
         const std::wstring name,
         const std::vector<std::wstring> alias,
         const std::wstring description,
-        const int arg_count
-    ) : arg_parser_arg(name, alias, description, 0) {};
+        const std::vector<std::wstring> default_values = {}
+        ) : arg_parser_arg(name, alias, description, default_values, 0) {};
 };
 
-class arg_parser_arg_pos : arg_parser_arg {
+class arg_parser_arg_pos : public arg_parser_arg {
+public:
     arg_parser_arg_pos(
         const std::wstring name,
         const std::vector<std::wstring> alias,
         const std::wstring description,
-        const int arg_count
-    ) : arg_parser_arg(name, alias, description, arg_count) {};
+        const std::vector<std::wstring> default_values = {},
+        const int arg_count = 1
+    ) : arg_parser_arg(name, alias, description, default_values, arg_count) {};
 };
 
-class arg_parser_arg_command : arg_parser_arg {
-    arg_parser_arg_command(
-        const std::wstring name,
-        const std::vector<std::wstring> alias,
-        const std::wstring description,
-        const int arg_count,
-        const std::wstring examples
-    ) : arg_parser_arg(name, alias, description, 1) {};
-    const std::wstring m_examples;
-};

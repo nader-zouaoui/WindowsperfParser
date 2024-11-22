@@ -1,11 +1,13 @@
 #include "arg-parser-arg.h"
+#include <stdexcept>
 
 arg_parser_arg::arg_parser_arg(
     const std::wstring name,
     const std::vector<std::wstring> alias,
     const std::wstring description,
+    const std::vector<std::wstring> default_values,
     const int arg_count
-) : m_name(name), m_aliases(alias), m_description(description), m_arg_count(arg_count) {};
+) : m_name(name), m_aliases(alias), m_description(description), m_arg_count(arg_count), m_values(default_values) {};
 
 inline bool arg_parser_arg::operator==(const std::wstring& other_arg) const
 {
@@ -64,15 +66,31 @@ void arg_parser_arg::set_is_parsed()
     m_is_parsed = true;
 }
 
+bool arg_parser_arg::is_parsed()
+{
+    return m_is_parsed;
+}
+
+bool arg_parser_arg::is_set()
+{
+    return is_parsed() && m_values.size() == m_arg_count;
+}
+
+std::vector<std::wstring> arg_parser_arg::get_values()
+{
+    return m_values;
+}
+
 bool arg_parser_arg::parse(std::vector<std::wstring> arg_vect)
 {
+    if (arg_vect.size() == 0 || !is_match(arg_vect[0]))
+        return false;
+
     if (m_arg_count == -1 && arg_vect.size() > 0) m_arg_count = arg_vect.size() - 1;
 
     if (arg_vect.size() < m_arg_count + 1)
-        return false;
+        throw std::invalid_argument("Not enough arguments provided.");
 
-    if (!is_match(arg_vect[0]))
-        return false;
     if (m_arg_count == 0)
     {
         set_is_parsed();
@@ -84,10 +102,9 @@ bool arg_parser_arg::parse(std::vector<std::wstring> arg_vect)
         for (auto& check_func : m_check_funcs)
         {
             if (!check_func(arg_vect[i]))
-                return false;
+                throw std::invalid_argument("Invalid arguments provided.");
         }
         m_values.push_back(arg_vect[i]);
-       
     }
     set_is_parsed();
     return true;
