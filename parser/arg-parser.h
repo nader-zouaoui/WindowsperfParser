@@ -43,6 +43,7 @@ using namespace std;
 
 
 typedef std::vector<std::wstring> wstr_vec;
+
 enum COMMAND_CLASS {
     STAT,
     SAMPLE,
@@ -54,6 +55,13 @@ enum COMMAND_CLASS {
     LIST,
     MAN,
     NO_COMMAND
+};
+static const std::set<COMMAND_CLASS> commands_with_events_and_metrics = { 
+    COMMAND_CLASS::STAT, 
+    COMMAND_CLASS::SAMPLE, 
+    COMMAND_CLASS::RECORD,
+    COMMAND_CLASS::TIMELINE,
+    COMMAND_CLASS::SPE 
 };
 
 class arg_parser_arg_command : public arg_parser_arg_opt {
@@ -209,6 +217,7 @@ public:
         L"Enable timeline mode (count multiple times with specified interval). Use `-i` to specify timeline interval, and `-n` to specify number of counts.",
         {}
     );
+
 
 #pragma endregion
 
@@ -393,5 +402,4 @@ public:
 protected:
     void throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message = L"") const;
 #pragma endregion
-
 };

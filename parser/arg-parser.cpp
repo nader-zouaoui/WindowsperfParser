@@ -49,6 +49,14 @@ void arg_parser::parse(
         raw_args.push_back(argv[i]);
         m_arg_array.push_back(argv[i]);
     }
+    try_match_and_set_arg(raw_args, do_list);
+    try_match_and_set_arg(raw_args, do_help);
+    try_match_and_set_arg(raw_args, do_version);
+    try_match_and_set_arg(raw_args, do_test);
+    try_match_and_set_arg(raw_args, do_detect);
+    try_match_and_set_arg(raw_args, do_sample);
+    try_match_and_set_arg(raw_args, do_record);
+    try_match_and_set_arg(raw_args, do_count);
 
     if (raw_args.size() == 0)
         throw_invalid_arg(L"", L"warning: No arguments were found!");
@@ -59,6 +67,7 @@ void arg_parser::parse(
         if (command->parse(raw_args)) {
             m_command = command->m_command;
             raw_args.erase(raw_args.begin());
+
             break;
         }
     }
@@ -90,6 +99,7 @@ void arg_parser::parse(
         {
             throw_invalid_arg(raw_args.front(), L"Error: Unrecognized command");
         }
+
     }
 }
 

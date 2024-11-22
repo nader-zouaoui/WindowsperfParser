@@ -109,7 +109,6 @@ namespace parsertests
             int argc = 5;
             mock_arg_parser parser;
             parser.parse(argc, argv);
-
             Assert::IsTrue(parser.do_record.is_set());
             Assert::IsTrue(check_value_in_vector(parser.double_dash.get_values(), L"notepad.exe"));
             Assert::IsTrue(COMMAND_CLASS::RECORD == parser.m_command);
