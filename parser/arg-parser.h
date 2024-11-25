@@ -63,11 +63,17 @@ public:
         const std::wstring name,
         const std::vector<std::wstring> alias,
         const std::wstring description,
-        const std::wstring examples,
-        const COMMAND_CLASS command
-    ) : arg_parser_arg_opt(name, alias, description), m_examples(examples), m_command(command) {};
+        const std::wstring useage_text,
+        const COMMAND_CLASS command,
+        const wstr_vec examples
+        ) : arg_parser_arg_opt(name, alias, description), m_examples(examples), m_command(command), m_useage_text(useage_text) {};
     const COMMAND_CLASS m_command = NO_COMMAND;
-    const std::wstring m_examples;
+    const wstr_vec m_examples;
+    const std::wstring m_useage_text;
+
+    wstring get_usage_text() const override;
+
+    wstring get_examples() const;
 
 };
 #pragma region arg structs
@@ -84,72 +90,95 @@ public:
         _In_ const int argc,
         _In_reads_(argc) const wchar_t* argv[]
     );
+    void print_help() const;
 #pragma endregion
 
 #pragma region Commands
     arg_parser_arg_command list_command = arg_parser_arg_command::arg_parser_arg_command(
         L"list",
         { L"-l" },
-        L"List available metrics and events.",
-        L"",
-        COMMAND_CLASS::LIST
+        L"List supported events and metrics. Enable verbose mode for more details.",
+        L"wperf list [-v] [--json] [--force-lock]",
+        COMMAND_CLASS::LIST,
+        {
+            L"> wperf list -v List all events and metrics available on your host with extended information."
+        }
     );
-
     arg_parser_arg_command test_command = arg_parser_arg_command::arg_parser_arg_command(
         L"test",
         { L"" },
-        L"",
-        L"",
-        COMMAND_CLASS::TEST
+        L"Configuration information about driver and application.",
+        L"wperf test [--json] [OPTIONS]",
+        COMMAND_CLASS::TEST,
+        {}
     );
     arg_parser_arg_command help_command = arg_parser_arg_command::arg_parser_arg_command(
         L"-h",
         { L"--help" },
-        L"",
-        L"",
-        COMMAND_CLASS::HELP
+        L"Run wperf help command.",
+        L"wperf help",
+        COMMAND_CLASS::HELP,
+        {}
     );
     arg_parser_arg_command version_command = arg_parser_arg_command::arg_parser_arg_command(
         L"--version",
         { L"" },
-        L"",
-        L"",
-        COMMAND_CLASS::VERSION
+        L"Display version.",
+        L"wperf --version",
+        COMMAND_CLASS::VERSION,
+        {}
     );
     arg_parser_arg_command detect_command = arg_parser_arg_command::arg_parser_arg_command(
         L"detect",
         { L"" },
-        L"",
-        L"",
-        COMMAND_CLASS::DETECT
+        L"List installed WindowsPerf-like Kernel Drivers (match GUID).",
+        L"wperf detect [--json] [OPTIONS]",
+        COMMAND_CLASS::DETECT,
+        {}
     );
     arg_parser_arg_command sample_command = arg_parser_arg_command::arg_parser_arg_command(
         L"sample",
         { L"" },
-        L"",
-        L"",
-        COMMAND_CLASS::SAMPLE
+        L"Sampling mode, for determining the frequencies of event occurrences produced by program locations at the function, basic block, and /or instruction levels.",
+        L"wperf sample [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config] [--image_name] [--pe_file] [--pdb_file] [--sample-display-long] [--force-lock] [--sample-display-row] [--symbol] [--record_spawn_delay] [--annotate] [--disassemble]",
+         COMMAND_CLASS::SAMPLE,
+        {
+            L"> wperf sample -e ld_spec:100000 --pe_file python_d.exe -c 1 Sample event `ld_spec` with frequency `100000` already running process `python_d.exe` on core #1. Press Ctrl + C to stop sampling and see the results.",
+        }
     );
     arg_parser_arg_command record_command = arg_parser_arg_command::arg_parser_arg_command(
         L"record",
         { L"" },
-        L"",
-        L"",
-        COMMAND_CLASS::RECORD
+        L"Same as sample but also automatically spawns the process and pins it to the core specified by `-c`. Process name is defined by COMMAND.User can pass verbatim arguments to the process with[ARGS].",
+        L"wperf record [-e] [--timeout] [-c] [-C] [-E] [-q] [--json] [--output] [--config] [--image_name] [--pe_file] [--pdb_file] [--sample-display-long] [--force-lock] [--sample-display-row] [--symbol] [--record_spawn_delay] [--annotate] [--disassemble] --COMMAND[ARGS]",
+        COMMAND_CLASS::RECORD,
+        {
+            L"> wperf record -e ld_spec:100000 -c 1 --timeout 30 -- python_d.exe -c 10**10**100 Launch `python_d.exe - c 10 * *10 * *100` process and start sampling event `ld_spec` with frequency `100000` on core #1 for 30 seconds. Hint: add `--annotate` or `--disassemble` to `wperf record` command line parameters to increase sampling \"resolution\"."
+#ifdef ENABLE_SPE
+           ,L"(> wperf record -e arm_spe_0/ld=1/ -c 8 --cpython\PCbuild\arm64\python_d.exe -c 10**10**100 Launch `python_d.exe -c 10**10**100` process on core no. 8 and start SPE sampling, enable collection of load sampled operations, including atomic operations that return a value to a register. Hint: add `--annotate` or `--disassemble` to `wperf record` command."
+#endif
+        }
     );
     arg_parser_arg_command count_command = arg_parser_arg_command::arg_parser_arg_command(
         L"stat",
         { L"" },
-        L"",
-        L"",
-        COMMAND_CLASS::STAT
+        L"Counting mode, for obtaining aggregate counts of occurrences of special events.",
+        L"wperf stat [-e] [-m] [-t] [-i] [-n] [-c] [-C] [-E] [-k] [--dmc] [-q] [--json] [--output][--config] [--force-lock] --COMMAND[ARGS]",
+        COMMAND_CLASS::STAT,
+        {
+            L"> wperf stat -e inst_spec,vfp_spec,ase_spec,ld_spec -c 0 --timeout 3 Count events `inst_spec`, `vfp_spec`, `ase_spec` and `ld_spec` on core #0 for 3 seconds.",
+            L"> wperf stat -m imix -e l1i_cache -c 7 --timeout 10.5 Count metric `imix` (metric events will be grouped) and additional event `l1i_cache` on core #7 for 10.5 seconds.",
+            L"> wperf stat -m imix -c 1 -t -i 2 -n 3 --timeout 5 Count in timeline mode(output counting to CSV file) metric `imix` 3 times on core #1 with 2 second intervals(delays between counts).Each count will last 5 seconds."
+        }
     );
     arg_parser_arg_command man_command = arg_parser_arg_command::arg_parser_arg_command(
-        L"stat",
+        L"man",
         { L"" },
-        L"",
-        L"",
-        COMMAND_CLASS::MAN
+        L"Plain text information about one or more specified event(s), metric(s), and or group metric(s).",
+        L"wperf man [--json]",
+        COMMAND_CLASS::MAN,
+        {
+        }
     );
 
 #pragma endregion
@@ -344,19 +373,21 @@ public:
 
     COMMAND_CLASS m_command = COMMAND_CLASS::NO_COMMAND;
     std::vector<arg_parser_arg_command*> m_commands_list = {
-       &list_command,
-       &test_command,
        &help_command,
        &version_command,
-       &detect_command,
        &sample_command,
-       &record_command,
        &count_command,
+       &record_command,
+       &list_command,
+       &test_command,
+       &detect_command,
        &man_command
     };
     
     std::vector<arg_parser_arg*> m_flags_list = {
        &json_opt,
+       &metrics_arg,
+       &events_arg,
        &kernel_opt,
        &force_lock_opt,
        &sample_display_long_opt,
@@ -382,8 +413,6 @@ public:
        &interval_arg,
        &iteration_arg,
        &dmc_arg,
-       &metrics_arg,
-       &events_arg,
        &extra_args_arg
     };
 
@@ -396,3 +425,4 @@ protected:
     void throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message = L"") const;
 #pragma endregion
 };
+

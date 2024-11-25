@@ -3,6 +3,9 @@
 #include <vector>
 #include <set>
 #include <functional>
+#include <sstream>
+#include <string>
+#define MAX_HELP_WIDTH 80
 
 struct arg_parser_arg {
     const std::wstring m_name;
@@ -27,6 +30,7 @@ public:
     );
     bool is_match(const std::wstring& arg) const;
     virtual std::wstring get_help() const;
+    virtual std::wstring get_all_flags_string() const;
     virtual std::wstring get_usage_text() const;
     arg_parser_arg add_alias(std::wstring new_alias);
     int get_arg_count() const;
@@ -61,3 +65,5 @@ public:
     ) : arg_parser_arg(name, alias, description, default_values, arg_count) {};
 };
 
+std::wstring arg_parser_add_wstring_behind_multiline_text(const std::wstring& str, const std::wstring& prefix);
+std::wstring arg_parser_format_string_to_length(const std::wstring& str, size_t max_width);

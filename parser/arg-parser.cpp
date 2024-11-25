@@ -36,6 +36,7 @@
 #include <vector>
 #include <sstream>
 
+
 arg_parser::arg_parser() {}
 
 void arg_parser::parse(
@@ -95,6 +96,31 @@ void arg_parser::parse(
     }
 }
 
+void arg_parser::print_help() const
+{
+    std::wcout << L"NAME:\n" 
+
+        << L"\twperf - Performance analysis tools for Windows on Arm\n\n"
+        << L"\tUsage: wperf <command> [options]\n\n"
+        << L"SYNOPSIS:\n\n";
+    for (auto& command : m_commands_list)
+    {
+        std::wcout << L"\t" << command->get_all_flags_string() << L":\n" << command->get_usage_text() << L"\n" ;
+    }
+
+    std::wcout << L"OPTIONS:\n\n";
+    for (auto& flag : m_flags_list)
+    {
+        std::wcout << L" " << flag->get_help() << L"\n";
+    }
+    std::wcout << L"EXAMPLES:\n\n";
+    for (auto& command : m_commands_list)
+    {
+        if (command->get_examples().empty()) continue;
+        std::wcout << L"  " << command->get_examples() <<L"\n";
+    }
+}
+
 #pragma region error handling
 void arg_parser::throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message) const
 {
@@ -131,3 +157,18 @@ void arg_parser::throw_invalid_arg(const std::wstring& arg, const std::wstring& 
 }
 
 #pragma endregion
+
+wstring arg_parser_arg_command::get_usage_text() const
+{
+    return arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(
+        m_useage_text + L"\n" + m_description, MAX_HELP_WIDTH), L"\t   ");
+}
+
+wstring arg_parser_arg_command::get_examples() const
+{
+    std::wstring example_output;
+    for (auto& example : m_examples) {
+        example_output += example + L"\n";
+    }
+    return arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(example_output, MAX_HELP_WIDTH),L"\t");
+}

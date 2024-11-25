@@ -21,7 +21,14 @@ bool arg_parser_arg::is_match(const std::wstring& other_arg) const
 
 std::wstring arg_parser_arg::get_help() const
 {
-    return m_name + L" or " + get_alias_string() + L"/n         " + m_description;
+    
+    return L"\t" + get_all_flags_string() + L":\n" + arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(m_description, MAX_HELP_WIDTH), L"\t   ");
+}
+
+std::wstring arg_parser_arg::get_all_flags_string() const
+{
+    if (get_alias_string().empty()) return m_name;
+    return m_name + L", " + get_alias_string();
 }
 
 std::wstring arg_parser_arg::get_usage_text() const
@@ -50,8 +57,11 @@ std::wstring arg_parser_arg::get_alias_string() const
     // convert alias vector to wstring
     std::wstring alias_string;
     for (auto& m_alias : m_aliases) {
-        alias_string.append(m_alias);
+        if (m_alias.empty()) continue;
+        alias_string.append(m_alias + L", ");
     }
+    if (alias_string.find(L", ") != std::wstring::npos) alias_string.erase(alias_string.end() - 2, alias_string.end());
+    
     return alias_string;
 }
 
@@ -110,3 +120,64 @@ bool arg_parser_arg::parse(std::vector<std::wstring> arg_vect)
     return true;
 }
 
+
+std::wstring arg_parser_add_wstring_behind_multiline_text(const std::wstring& str, const std::wstring& prefix)
+{
+    std::wstring formatted_str;
+    std::wstring current_line;
+    std::wistringstream iss(str);
+    while (getline(iss, current_line, L'\n'))
+    {
+        if (current_line.empty())
+        {
+            formatted_str += L"\n";
+            continue;
+        }
+    
+        formatted_str += prefix;
+        formatted_str += current_line;
+        formatted_str += L"\n";
+    }
+    return formatted_str;
+}
+
+std::wstring arg_parser_format_string_to_length(const std::wstring& str, size_t max_width)
+{
+    std::wstring formatted_str;
+    std::wistringstream lines_stream(str);
+    std::wstring line;
+
+    while (std::getline(lines_stream, line, L'\n'))
+    {
+        std::wstring current_line;
+        std::wistringstream word_stream(line);
+        std::wstring word;
+
+        while (word_stream >> word)
+        {
+            if (current_line.size() + word.size() + 1 > max_width)
+            {
+                formatted_str += current_line + L"\n";
+                current_line = word + L" ";
+            }
+            else
+            {
+                current_line += word + L" ";
+            }
+        }
+
+        if (!current_line.empty())
+        {
+            formatted_str += current_line + L"\n\n";
+        }
+    }
+
+    // Remove the trailing newline, if any
+    if (!formatted_str.empty() && formatted_str.back() == L'\n\n')
+    {
+        formatted_str.pop_back();
+        formatted_str.pop_back();
+    }
+
+    return formatted_str;
+}

@@ -38,5 +38,10 @@ int wmain(
 {
     arg_parser parser;
     parser.parse(argc, argv);
-    std::wcout << L"Hello " << (parser.annotate_opt.is_set() ? L"annotate" : L"no annotate") << L" World!\n";
+    if (parser.m_command == COMMAND_CLASS::HELP)
+    {
+        parser.print_help();
+        return 0;
+    }
+    std::wcout << L"Hello " << argv[1]<< (parser.annotate_opt.is_set() ? L"annotate" : L"no annotate") << L" World!\n";
 }
