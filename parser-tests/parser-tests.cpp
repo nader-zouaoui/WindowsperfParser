@@ -52,8 +52,8 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::AreEqual(true, parser.do_verbose.is_set());
-            Assert::AreEqual(true, parser.do_json.is_set());
+            Assert::AreEqual(true, parser.verbose_opt.is_set());
+            Assert::AreEqual(true, parser.json_opt.is_set());
             Assert::IsTrue(COMMAND_CLASS::TEST == parser.m_command);
         }
         TEST_METHOD(TEST_RANDOM_ARGS_REJECTION)
@@ -74,7 +74,7 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(parser.do_help.is_set());
+            Assert::IsTrue(parser.help_command.is_set());
             Assert::IsTrue(COMMAND_CLASS::HELP == parser.m_command);
         }
 
@@ -86,7 +86,7 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(parser.do_version.is_set());
+            Assert::IsTrue(parser.version_command.is_set());
             Assert::IsTrue(COMMAND_CLASS::VERSION == parser.m_command);
         }
 
@@ -98,7 +98,7 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(parser.do_list.is_set());
+            Assert::IsTrue(parser.list_command.is_set());
             Assert::IsTrue(COMMAND_CLASS::LIST == parser.m_command);
         }
 
@@ -109,8 +109,8 @@ namespace parsertests
             int argc = 5;
             mock_arg_parser parser;
             parser.parse(argc, argv);
-            Assert::IsTrue(parser.do_record.is_set());
-            Assert::IsTrue(check_value_in_vector(parser.double_dash.get_values(), L"notepad.exe"));
+            Assert::IsTrue(parser.record_command.is_set());
+            Assert::IsTrue(check_value_in_vector(parser.extra_args_arg.get_values(), L"notepad.exe"));
             Assert::IsTrue(COMMAND_CLASS::RECORD == parser.m_command);
         }
 
@@ -146,7 +146,7 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(check_value_in_vector(parser.count_duration.get_values(), L"2m"));
+            Assert::IsTrue(check_value_in_vector(parser.timeout_arg.get_values(), L"2m"));
         }
 
         TEST_METHOD(TEST_INVALID_TIMEOUT_WITH_WRONG_FORMAT)
@@ -168,7 +168,7 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(parser.do_detect.is_set());
+            Assert::IsTrue(parser.detect_command.is_set());
             Assert::IsTrue(COMMAND_CLASS::DETECT == parser.m_command);
         }
 
@@ -180,9 +180,9 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(parser.do_verbose.is_set());
-            Assert::IsTrue(parser.is_quite.is_set());
-            Assert::IsTrue(parser.do_json.is_set());
+            Assert::IsTrue(parser.verbose_opt.is_set());
+            Assert::IsTrue(parser.quite_opt.is_set());
+            Assert::IsTrue(parser.json_opt.is_set());
             Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.m_command);
         }
 
@@ -206,7 +206,7 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(check_value_in_vector(parser.sample_display_row.get_values(), L"100"));
+            Assert::IsTrue(check_value_in_vector(parser.sample_display_row_arg.get_values(), L"100"));
             Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.m_command);
         }
 
@@ -219,7 +219,7 @@ namespace parsertests
 
             parser.parse(argc, argv);
 
-            Assert::IsTrue(check_value_in_vector(parser.sample_pe_file.get_values(), L"C:\\Program\\sample.exe"));
+            Assert::IsTrue(check_value_in_vector(parser.pe_file_arg.get_values(), L"C:\\Program\\sample.exe"));
             Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.m_command);
         }
 
@@ -233,7 +233,7 @@ namespace parsertests
             // Similarly, adjust or mock check_file_path for testing
             parser.parse(argc, argv);
 
-            Assert::IsTrue(check_value_in_vector(parser.sample_pdb_file.get_values(), L"C:\\Program\\sample.pdb"));
+            Assert::IsTrue(check_value_in_vector(parser.pdb_file_arg.get_values(), L"C:\\Program\\sample.pdb"));
             Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.m_command);
         }
 
@@ -245,7 +245,7 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(check_value_in_vector(parser.sample_image_name.get_values(), L"notepad.exe"));
+            Assert::IsTrue(check_value_in_vector(parser.image_name_arg.get_values(), L"notepad.exe"));
             Assert::IsTrue(COMMAND_CLASS::SAMPLE == parser.m_command);
         }
 
@@ -257,7 +257,7 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
 
-            Assert::IsTrue(parser.do_force_lock.is_set());
+            Assert::IsTrue(parser.force_lock_opt.is_set());
             Assert::IsTrue(COMMAND_CLASS::TEST == parser.m_command);
         }
 
@@ -305,14 +305,14 @@ namespace parsertests
             mock_arg_parser parser;
             parser.parse(argc, argv);
             Assert::IsTrue(COMMAND_CLASS::STAT == parser.m_command);
-            Assert::IsTrue(parser.raw_events.is_set());
-            Assert::IsTrue(parser.output_filename.is_set());
-            Assert::IsTrue(parser.cores_idx.is_set());
-            Assert::IsTrue(parser.count_duration.is_set());
-            Assert::IsTrue(check_value_in_vector(parser.count_duration.get_values(), L"5"));
-            Assert::IsTrue(check_value_in_vector(parser.cores_idx.get_values(), L"0"));
-            Assert::IsTrue(check_value_in_vector(parser.output_filename.get_values(), L"_output_02.json"));
-            Assert::IsTrue(check_value_in_vector(parser.raw_events.get_values(), L"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec"));
+            Assert::IsTrue(parser.events_arg.is_set());
+            Assert::IsTrue(parser.output_filename_arg.is_set());
+            Assert::IsTrue(parser.cores_arg.is_set());
+            Assert::IsTrue(parser.timeout_arg.is_set());
+            Assert::IsTrue(check_value_in_vector(parser.timeout_arg.get_values(), L"5"));
+            Assert::IsTrue(check_value_in_vector(parser.cores_arg.get_values(), L"0"));
+            Assert::IsTrue(check_value_in_vector(parser.output_filename_arg.get_values(), L"_output_02.json"));
+            Assert::IsTrue(check_value_in_vector(parser.events_arg.get_values(), L"inst_spec,vfp_spec,ase_spec,dp_spec,ld_spec,st_spec,br_immed_spec,crypto_spec"));
         }
     };
 }
