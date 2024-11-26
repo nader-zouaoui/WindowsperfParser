@@ -67,6 +67,9 @@ void arg_parser::parse(
     if (m_command == COMMAND_CLASS::NO_COMMAND) {
         throw_invalid_arg(raw_args.front(), L"warning: command not recognized!");
     }
+    if (m_command == COMMAND_CLASS::HELP) {
+        return;
+    }
 #pragma endregion
 
     while (raw_args.size() > 0)
@@ -105,7 +108,7 @@ void arg_parser::print_help() const
         << L"SYNOPSIS:\n\n";
     for (auto& command : m_commands_list)
     {
-        std::wcout << L"\t" << command->get_all_flags_string() << L":\n" << command->get_usage_text() << L"\n" ;
+        std::wcout << L"\t" << command->get_all_flags_string() << L"\n" << command->get_usage_text() << L"\n" ;
     }
 
     std::wcout << L"OPTIONS:\n\n";
@@ -161,7 +164,7 @@ void arg_parser::throw_invalid_arg(const std::wstring& arg, const std::wstring& 
 wstring arg_parser_arg_command::get_usage_text() const
 {
     return arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(
-        m_useage_text + L"\n" + m_description, MAX_HELP_WIDTH), L"\t   ");
+        m_useage_text + L"\n" + m_description), L"\t   ");
 }
 
 wstring arg_parser_arg_command::get_examples() const
@@ -170,5 +173,5 @@ wstring arg_parser_arg_command::get_examples() const
     for (auto& example : m_examples) {
         example_output += example + L"\n";
     }
-    return arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(example_output, MAX_HELP_WIDTH),L"\t");
+    return arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(example_output),L"\t");
 }

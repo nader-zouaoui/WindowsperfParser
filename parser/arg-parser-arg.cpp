@@ -22,7 +22,7 @@ bool arg_parser_arg::is_match(const std::wstring& other_arg) const
 std::wstring arg_parser_arg::get_help() const
 {
     
-    return L"\t" + get_all_flags_string() + L":\n" + arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(m_description, MAX_HELP_WIDTH), L"\t   ");
+    return L"\t" + get_all_flags_string() + L"\n" + arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(m_description), L"\t   ");
 }
 
 std::wstring arg_parser_arg::get_all_flags_string() const
@@ -134,9 +134,7 @@ std::wstring arg_parser_add_wstring_behind_multiline_text(const std::wstring& st
             continue;
         }
     
-        formatted_str += prefix;
-        formatted_str += current_line;
-        formatted_str += L"\n";
+        formatted_str += prefix + current_line + L"\n";
     }
     return formatted_str;
 }
@@ -155,8 +153,12 @@ std::wstring arg_parser_format_string_to_length(const std::wstring& str, size_t 
 
         while (word_stream >> word)
         {
-            if (current_line.size() + word.size() + 1 > max_width)
+            if (current_line.size() + word.size() > max_width && !current_line.empty())
             {
+                if (!current_line.empty() && current_line.back() == L' ')
+                {
+                    current_line.pop_back();
+                }
                 formatted_str += current_line + L"\n";
                 current_line = word + L" ";
             }
@@ -165,19 +167,22 @@ std::wstring arg_parser_format_string_to_length(const std::wstring& str, size_t 
                 current_line += word + L" ";
             }
         }
-
+        if (!current_line.empty() && current_line.back() == L' ')
+        {
+            current_line.pop_back();
+        }
         if (!current_line.empty())
         {
             formatted_str += current_line + L"\n\n";
         }
     }
-
+ 
     // Remove the trailing newline, if any
     if (!formatted_str.empty() && formatted_str.back() == L'\n\n')
     {
         formatted_str.pop_back();
         formatted_str.pop_back();
     }
-
+    
     return formatted_str;
 }
