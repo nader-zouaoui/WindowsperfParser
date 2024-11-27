@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="parser-tests.cpp">
+    <ClCompile Include="arg-parser-tests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp">
@@ -30,9 +30,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="mock-arg-parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
