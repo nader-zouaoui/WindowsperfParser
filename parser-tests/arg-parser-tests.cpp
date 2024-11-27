@@ -296,6 +296,17 @@ namespace arg_parser_tests
                 }
             );
         }
+        // Test parsing with the same command called twice
+        TEST_METHOD(TEST_DUPLICATE_ARGUMENT)
+        {
+            const wchar_t* argv[] = { L"wperf", L"stat", L"-e", L"ld_spec", L"-e", L"vfp_spec"};
+            int argc = 6;
+            arg_parser parser;
+            parser.parse(argc, argv);
+            Assert::AreEqual(parser.events_arg.get_values().size(), size_t(2));
+            Assert::IsTrue(check_value_in_vector(parser.events_arg.get_values(), L"vfp_spec"));
+            Assert::IsTrue(check_value_in_vector(parser.events_arg.get_values(), L"ld_spec"));
+        }
 
         // Test complex stat command 
         TEST_METHOD(TEST_FULL_STAT_COMMAND)
