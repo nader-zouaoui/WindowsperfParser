@@ -36,142 +36,143 @@
 #include <vector>
 #include <sstream>
 
+namespace ArgParser {
+    arg_parser::arg_parser() {}
 
-arg_parser::arg_parser() {}
-
-void arg_parser::parse(
-    _In_ const int argc,
-    _In_reads_(argc) const wchar_t* argv[]
-)
-{
-    wstr_vec raw_args;
-    for (int i = 1; i < argc; i++)
+    void arg_parser::parse(
+        _In_ const int argc,
+        _In_reads_(argc) const wchar_t* argv[]
+    )
     {
-        raw_args.push_back(argv[i]);
-        m_arg_array.push_back(argv[i]);
-    }
-
-    if (raw_args.size() == 0)
-        throw_invalid_arg(L"", L"warning: No arguments were found!");
-
-#pragma region Command Selector
-    for (auto& command : m_commands_list)
-    {
-        if (command->parse(raw_args)) {
-            m_command = command->m_command;
-            raw_args.erase(raw_args.begin());
-
-            break;
-        }
-    }
-    if (m_command == COMMAND_CLASS::NO_COMMAND) {
-        throw_invalid_arg(raw_args.front(), L"warning: command not recognized!");
-    }
-    if (m_command == COMMAND_CLASS::HELP) {
-        return;
-    }
-#pragma endregion
-
-    while (raw_args.size() > 0)
-    {
-        size_t initial_size = raw_args.size();
-
-        for (auto& current_flag : m_flags_list)
+        wstr_vec raw_args;
+        for (int i = 1; i < argc; i++)
         {
-            try
+            raw_args.push_back(argv[i]);
+            m_arg_array.push_back(argv[i]);
+        }
+
+        if (raw_args.size() == 0)
+            throw_invalid_arg(L"", L"warning: No arguments were found!");
+
+    #pragma region Command Selector
+        for (auto& command : m_commands_list)
+        {
+            if (command->parse(raw_args)) {
+                m_command = command->m_command;
+                raw_args.erase(raw_args.begin());
+
+                break;
+            }
+        }
+        if (m_command == COMMAND_CLASS::NO_COMMAND) {
+            throw_invalid_arg(raw_args.front(), L"warning: command not recognized!");
+        }
+        if (m_command == COMMAND_CLASS::HELP) {
+            return;
+        }
+    #pragma endregion
+
+        while (raw_args.size() > 0)
+        {
+            size_t initial_size = raw_args.size();
+
+            for (auto& current_flag : m_flags_list)
             {
-                if (current_flag->parse(raw_args)) {
-                    raw_args.erase(raw_args.begin(), raw_args.begin() + current_flag->get_arg_count() + 1);
+                try
+                {
+                    if (current_flag->parse(raw_args)) {
+                        raw_args.erase(raw_args.begin(), raw_args.begin() + current_flag->get_arg_count() + 1);
+                    }
+                }
+                catch (const std::exception& err)
+                {
+                    throw_invalid_arg(raw_args.front(), L"Error: " + std::wstring(err.what(), err.what() + std::strlen(err.what())));
                 }
             }
-            catch (const std::exception& err)
+
+            // if going over all the known arguments doesn't affect the size of the raw_args, then the command is unkown
+            if (initial_size == raw_args.size())
             {
-                throw_invalid_arg(raw_args.front(), L"Error: " + std::wstring(err.what(), err.what() + std::strlen(err.what())));
+                throw_invalid_arg(raw_args.front(), L"Error: Unrecognized command");
             }
-        }
 
-        // if going over all the known arguments doesn't affect the size of the raw_args, then the command is unkown
-        if (initial_size == raw_args.size())
+        }
+    }
+
+    void arg_parser::print_help() const
+    {
+        std::wcout << L"NAME:\n" 
+
+            << L"\twperf - Performance analysis tools for Windows on Arm\n\n"
+            << L"\tUsage: wperf <command> [options]\n\n"
+            << L"SYNOPSIS:\n\n";
+        for (auto& command : m_commands_list)
         {
-            throw_invalid_arg(raw_args.front(), L"Error: Unrecognized command");
+            std::wcout << L"\t" << command->get_all_flags_string() << L"\n" << command->get_usage_text() << L"\n" ;
         }
 
-    }
-}
-
-void arg_parser::print_help() const
-{
-    std::wcout << L"NAME:\n" 
-
-        << L"\twperf - Performance analysis tools for Windows on Arm\n\n"
-        << L"\tUsage: wperf <command> [options]\n\n"
-        << L"SYNOPSIS:\n\n";
-    for (auto& command : m_commands_list)
-    {
-        std::wcout << L"\t" << command->get_all_flags_string() << L"\n" << command->get_usage_text() << L"\n" ;
-    }
-
-    std::wcout << L"OPTIONS:\n\n";
-    for (auto& flag : m_flags_list)
-    {
-        std::wcout << L" " << flag->get_help() << L"\n";
-    }
-    std::wcout << L"EXAMPLES:\n\n";
-    for (auto& command : m_commands_list)
-    {
-        if (command->get_examples().empty()) continue;
-        std::wcout << L"  " << command->get_examples() <<L"\n";
-    }
-}
-
-#pragma region error handling
-void arg_parser::throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message) const
-{
-    std::wstring command = L"wperf";
-    for (int i = 1; i < m_arg_array.size(); ++i) {
-        if (i > 0) {
-            command.append(L" ");
+        std::wcout << L"OPTIONS:\n\n";
+        for (auto& flag : m_flags_list)
+        {
+            std::wcout << L" " << flag->get_help() << L"\n";
         }
-        command.append(m_arg_array.at(i));
+        std::wcout << L"EXAMPLES:\n\n";
+        for (auto& command : m_commands_list)
+        {
+            if (command->get_examples().empty()) continue;
+            std::wcout << L"  " << command->get_examples() <<L"\n";
+        }
     }
 
-    std::size_t pos = command.find(arg);
-    if (pos == 0 || pos == std::wstring::npos) {
-        pos = command.length();
+    #pragma region error handling
+    void arg_parser::throw_invalid_arg(const std::wstring& arg, const std::wstring& additional_message) const
+    {
+        std::wstring command = L"wperf";
+        for (int i = 1; i < m_arg_array.size(); ++i) {
+            if (i > 0) {
+                command.append(L" ");
+            }
+            command.append(m_arg_array.at(i));
+        }
+
+        std::size_t pos = command.find(arg);
+        if (pos == 0 || pos == std::wstring::npos) {
+            pos = command.length();
+        }
+
+        std::wstring indicator(pos, L'~');
+        indicator += L'^';
+
+        /*
+        TODO: THIS function should change to use GetErrorOutputStream before migrating to wperf
+
+         */
+
+        std::wostringstream error_message;
+        error_message << L"Invalid argument detected:\n"
+            << command << L"\n"
+            << indicator << L"\n";
+        if (!additional_message.empty()) {
+            error_message << additional_message << L"\n";
+        }
+        std::wcerr << error_message.str();
+        throw std::invalid_argument("INVALID_ARGUMENT");
     }
 
-    std::wstring indicator(pos, L'~');
-    indicator += L'^';
+    #pragma endregion
 
-    /*
-    TODO: THIS function should change to use GetErrorOutputStream before migrating to wperf
-
-     */
-
-    std::wostringstream error_message;
-    error_message << L"Invalid argument detected:\n"
-        << command << L"\n"
-        << indicator << L"\n";
-    if (!additional_message.empty()) {
-        error_message << additional_message << L"\n";
+    wstring arg_parser_arg_command::get_usage_text() const
+    {
+        return arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(
+            m_useage_text + L"\n" + m_description), L"\t   ");
     }
-    std::wcerr << error_message.str();
-    throw std::invalid_argument("INVALID_ARGUMENT");
-}
 
-#pragma endregion
-
-wstring arg_parser_arg_command::get_usage_text() const
-{
-    return arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(
-        m_useage_text + L"\n" + m_description), L"\t   ");
-}
-
-wstring arg_parser_arg_command::get_examples() const
-{
-    std::wstring example_output;
-    for (auto& example : m_examples) {
-        example_output += example + L"\n";
+    wstring arg_parser_arg_command::get_examples() const
+    {
+        std::wstring example_output;
+        for (auto& example : m_examples) {
+            example_output += example + L"\n";
+        }
+        return arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(example_output),L"\t");
     }
-    return arg_parser_add_wstring_behind_multiline_text(arg_parser_format_string_to_length(example_output),L"\t");
 }

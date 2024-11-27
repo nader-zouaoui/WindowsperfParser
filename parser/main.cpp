@@ -36,9 +36,9 @@ int wmain(
     _In_reads_(argc) const wchar_t* argv[]
 )
 {
-    arg_parser parser;
+    ArgParser::arg_parser parser;
     parser.parse(argc, argv);
-    if (parser.m_command == COMMAND_CLASS::HELP)
+    if (parser.m_command == ArgParser::COMMAND_CLASS::HELP)
     {
         parser.print_help();
         return 0;

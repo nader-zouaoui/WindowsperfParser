@@ -34,6 +34,7 @@
 #include "parser/arg-parser-arg.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+using namespace ArgParserArg;
 
 namespace argparser_arg_tests
 {
